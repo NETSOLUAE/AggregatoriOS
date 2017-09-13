@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="12121" systemVersion="16E195" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12089"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="CustomAlert" customModule="Aggregator" customModuleProvider="target">
+            <connections>
+                <outlet property="oldPin" destination="Qd0-Iy-M8D" id="KCZ-TI-Ukq"/>
+                <outlet property="view" destination="iN0-l3-epB" id="QK8-33-3cf"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="300"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" text="Text" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="Qd0-Iy-M8D">
+                    <rect key="frame" x="8" y="47" width="359" height="193"/>
+                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                    <constraints>
+                        <constraint firstAttribute="height" constant="193" id="hCm-Nw-qTG"/>
+                    </constraints>
+                    <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                </textView>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Cover Details" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5bp-j3-y5I">
+                    <rect key="frame" x="11" y="18" width="356" height="21"/>
+                    <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="17"/>
+                    <nil key="textColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tKS-1e-6Hz">
+                    <rect key="frame" x="173.5" y="257" width="30" height="30"/>
+                    <state key="normal" title="Ok">
+                        <color key="titleColor" red="0.92941176469999998" green="0.098039215690000001" blue="0.25490196079999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                    </state>
+                    <connections>
+                        <action selector="doDismiss:" destination="-1" eventType="touchUpInside" id="fjL-D8-3Xn"/>
+                    </connections>
+                </button>
+            </subviews>
+            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="Qd0-Iy-M8D" secondAttribute="trailing" constant="8" id="6zG-mr-jbR"/>
+                <constraint firstItem="5bp-j3-y5I" firstAttribute="centerX" secondItem="tKS-1e-6Hz" secondAttribute="centerX" id="DBI-Sp-19t"/>
+                <constraint firstItem="Qd0-Iy-M8D" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="8" id="H6h-nV-3xB"/>
+                <constraint firstItem="Qd0-Iy-M8D" firstAttribute="centerX" secondItem="iN0-l3-epB" secondAttribute="centerX" id="Nxp-JH-bLq"/>
+                <constraint firstItem="5bp-j3-y5I" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="11" id="Otb-K5-VKB"/>
+                <constraint firstAttribute="trailing" secondItem="5bp-j3-y5I" secondAttribute="trailing" constant="8" id="ajY-Eh-cz2"/>
+                <constraint firstItem="Qd0-Iy-M8D" firstAttribute="top" secondItem="5bp-j3-y5I" secondAttribute="bottom" constant="8" symbolic="YES" id="ega-OO-4zI"/>
+                <constraint firstItem="tKS-1e-6Hz" firstAttribute="top" secondItem="Qd0-Iy-M8D" secondAttribute="bottom" constant="17" id="jLc-Sv-dz7"/>
+                <constraint firstItem="5bp-j3-y5I" firstAttribute="top" secondItem="iN0-l3-epB" secondAttribute="top" constant="18" id="ki3-Ig-mzB"/>
+            </constraints>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <point key="canvasLocation" x="24.5" y="52"/>
+        </view>
+    </objects>
+</document>

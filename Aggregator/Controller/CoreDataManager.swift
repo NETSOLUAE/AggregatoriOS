@@ -306,6 +306,160 @@ class CoreDataManager: NSObject {
         return nil
     }
     // End of Vehicle Variant Transactions
+    
+    // Start of User Info Transactions
+    func clearUserInfo() {
+        do {
+            let context = persistentContainer.viewContext
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: String(describing: USER_INFO.self))
+            do {
+                let objects  = try context.fetch(fetchRequest) as? [NSManagedObject]
+                _ = objects.map{$0.map{context.delete($0)}}
+                self.saveContext()
+            } catch let error {
+                print("ERROR DELETING : \(error)")
+            }
+        }
+    }
+    
+    func createUserInfoEntityFrom(dictionary: [String: AnyObject]) {
+        
+        let context = persistentContainer.viewContext
+        if let userInfoEntity = NSEntityDescription.insertNewObject(forEntityName: String(describing: USER_INFO.self), into: context) as? USER_INFO {
+            userInfoEntity.id = dictionary["id"] as? String
+            userInfoEntity.name = dictionary["full_name"] as? String
+            userInfoEntity.age = dictionary["age"] as? String
+            userInfoEntity.mobile = dictionary["mobile_no"] as? String
+            userInfoEntity.nationalID = dictionary["national_id"] as? String
+            userInfoEntity.email = dictionary["email"] as? String
+            userInfoEntity.status = dictionary["status"] as? String
+            userInfoEntity.companyID = dictionary["company_id"] as? String
+            userInfoEntity.vehicleUsage = dictionary["vehicle_usage"] as? String
+            userInfoEntity.vehicleType = dictionary["usage_type"] as? String
+            userInfoEntity.vehicleMake = dictionary["make"] as? String
+            userInfoEntity.vehicleModel = dictionary["modal"] as? String
+            userInfoEntity.vehicleVariant = dictionary["variant"] as? String
+            userInfoEntity.rto = dictionary["rto"] as? String
+            userInfoEntity.yom = dictionary["yom"] as? String
+            userInfoEntity.regidtrationDate = dictionary["registration_date"] as? String
+            userInfoEntity.price = dictionary["price"] as? String
+        }
+        do {
+            try persistentContainer.viewContext.save()
+        } catch let error {
+            print(error)
+        }
+    }
+    // End of User Info Transactions
+    
+    // Start of Company Details Transactions
+    func clearCompanyDetails() {
+        do {
+            let context = persistentContainer.viewContext
+            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: String(describing: COMPANY_DETAILS.self))
+            let fetchCoverRequest = NSFetchRequest<NSFetchRequestResult>(entityName: String(describing: COMPANY_COVER.self))
+            do {
+                let objects = try context.fetch(fetchRequest) as? [NSManagedObject]
+                _ = objects.map{$0.map{context.delete($0)}}
+                let objectsCover = try context.fetch(fetchCoverRequest) as? [NSManagedObject]
+                _ = objectsCover.map{$0.map{context.delete($0)}}
+                self.saveContext()
+            } catch let error {
+                print("ERROR DELETING : \(error)")
+            }
+        }
+    }
+    
+    func saveInCompanyDetailsWith(array: [[[String: AnyObject]]]) {
+        for array in array {
+            let data = array as [[String:Any]]
+            _ = data.map{self.createCompanyDetailsEntityFrom(dictionary: $0 as [String : AnyObject])}
+            do {
+                try persistentContainer.viewContext.save()
+            } catch let error {
+                print(error)
+            }
+        }
+    }
+    
+    private func createCompanyDetailsEntityFrom(dictionary: [String: AnyObject]) -> NSManagedObject? {
+        
+        let context = persistentContainer.viewContext
+        if let companyEntity = NSEntityDescription.insertNewObject(forEntityName: String(describing: COMPANY_DETAILS.self), into: context) as? COMPANY_DETAILS {
+            companyEntity.productID = dictionary["productId"] as? String ?? ""
+            companyEntity.insurerID = dictionary["insurerId"] as? String ?? ""
+            companyEntity.lob = dictionary["lob"] as? String ?? ""
+            companyEntity.productType = dictionary["productType"] as? String ?? ""
+            companyEntity.productName = dictionary["productName"] as? String ?? ""
+            companyEntity.effectiveDate = dictionary["effectiveDate"] as? String ?? ""
+            companyEntity.endDate = dictionary["endDate"] as? String ?? ""
+            companyEntity.insurerName = dictionary["insurerName"] as? String ?? ""
+            if dictionary["tax"] != nil {
+                companyEntity.tax = dictionary["tax"] as? String ?? ""
+            } else {
+                companyEntity.tax = "None"
+            }
+            if dictionary["scheme"] != nil {
+                companyEntity.scheme = dictionary["scheme"] as? String ?? ""
+            } else {
+                companyEntity.scheme = "None"
+            }
+            var attribute = ""
+            if dictionary["attributes"] != nil {
+                let attributes = dictionary["attributes"] as! [[String:Any]]
+                for attributes in attributes {
+                    for (key, value) in attributes {
+                        var heading = key;
+                        if (key.contains("_")) {
+                            heading = heading.replacingOccurrences(of: "_", with: " ")
+                        }
+                        attribute = attribute + heading + " : " + (value as? String ?? "") + "\n"
+                    }
+                }
+                companyEntity.attribute = attribute
+            }
+            var fee = ""
+            if dictionary["fees"] != nil {
+                let fees = dictionary["fees"] as! [[String:Any]]
+                for fees in fees {
+                    for (key, value) in fees {
+                        fee = fee + key + " : " + (value as? String ?? "") + "\n"
+                    }
+                }
+                companyEntity.fees = fee
+            }
+            var coverPremium = ""
+            var coverAmount = 0
+            if dictionary["coverPremiums"] != nil {
+                let coverPremiums = dictionary["coverPremiums"] as! [String:Any]
+                for (key, value) in coverPremiums {
+                    let amount = value as? Int ?? 0
+                    coverPremium = coverPremium + "\(key)\(" : ")\(amount)" + "\n"
+                    coverAmount = coverAmount + amount
+                }
+                companyEntity.coverPremium = coverPremium
+            }
+            let totalPremium = dictionary["totalPremium"] as? Int ?? 0
+            coverAmount = coverAmount + totalPremium
+            companyEntity.totalPremium = "\(coverAmount)"
+            if dictionary["covers"] != nil {
+                let dependent = dictionary["covers"] as! [[String:Any]]
+                for dependent in dependent {
+                    if let coverEntity = NSEntityDescription.insertNewObject(forEntityName: String(describing: COMPANY_COVER.self), into: context) as? COMPANY_COVER {
+                        coverEntity.productID = dictionary["productId"] as? String ?? ""
+                        coverEntity.insuredObject = dependent["insuredObject"] as? String ?? ""
+                        coverEntity.coverID = dependent["coverId"] as? String ?? ""
+                        coverEntity.coverType = dependent["coverType"] as? String ?? ""
+                        coverEntity.coverName = dependent["coverName"] as? String ?? ""
+                        companyEntity.addToCovers(_ :coverEntity)
+                    }
+                }
+            }
+            return companyEntity
+        }
+        return nil
+    }
+    // End of Company Details Transactions
 }
 
 extension CoreDataManager {

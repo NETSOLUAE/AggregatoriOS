@@ -1,4 +1,98 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
-    <elements/>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="12141" systemVersion="16E195" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="COMPANY_COVER" representedClassName="COMPANY_COVER" syncable="YES">
+        <attribute name="coverID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="coverName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="coverType" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="insuredObject" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="productID" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="company" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="COMPANY_DETAILS" inverseName="covers" inverseEntity="COMPANY_DETAILS" syncable="YES"/>
+    </entity>
+    <entity name="COMPANY_DETAILS" representedClassName="COMPANY_DETAILS" syncable="YES">
+        <attribute name="attribute" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="coverPremium" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="effectiveDate" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="endDate" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="fees" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="insurerID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="insurerName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="lob" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="productID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="productName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="productType" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="scheme" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="tax" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="totalPremium" optional="YES" attributeType="String" syncable="YES"/>
+        <relationship name="covers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="COMPANY_COVER" inverseName="company" inverseEntity="COMPANY_COVER" syncable="YES"/>
+    </entity>
+    <entity name="USER_INFO" representedClassName="USER_INFO" syncable="YES">
+        <attribute name="age" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="companyID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="email" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="id" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="mobile" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="name" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="nationalID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="price" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="regidtrationDate" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="rto" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="status" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="vehicleMake" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="vehicleModel" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="vehicleType" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="vehicleUsage" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="vehicleVariant" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="yom" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="VEHICLE_MAKE" representedClassName="VEHICLE_MAKE" syncable="YES">
+        <attribute name="makeID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="makeName" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="VEHICLE_MODEL" representedClassName="VEHICLE_MODEL" syncable="YES">
+        <attribute name="makeID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="makeName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="modelID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="modelName" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="VEHICLE_RTO" representedClassName="VEHICLE_RTO" syncable="YES">
+        <attribute name="rtoID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="rtoName" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="VEHICLE_TYPE" representedClassName="VEHICLE_TYPE" syncable="YES">
+        <attribute name="gvw" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="typeID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="typeName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="usageID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="usageName" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="VEHICLE_USAGE" representedClassName="VEHICLE_USAGE" syncable="YES">
+        <attribute name="usageID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="usageName" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <entity name="VEHICLE_VARIANT" representedClassName="VEHICLE_VARIANT" syncable="YES">
+        <attribute name="attribute" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="endYear" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="makeID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="makeName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="modelID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="modelName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="numCycle" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="price" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="sc" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="startYear" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="variantID" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="variantName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="vehicleType" optional="YES" attributeType="String" syncable="YES"/>
+    </entity>
+    <elements>
+        <element name="COMPANY_COVER" positionX="0" positionY="144" width="128" height="135"/>
+        <element name="COMPANY_DETAILS" positionX="-9" positionY="135" width="128" height="270"/>
+        <element name="USER_INFO" positionX="36" positionY="189" width="128" height="300"/>
+        <element name="VEHICLE_MAKE" positionX="-36" positionY="54" width="128" height="75"/>
+        <element name="VEHICLE_MODEL" positionX="-18" positionY="63" width="128" height="105"/>
+        <element name="VEHICLE_RTO" positionX="18" positionY="180" width="128" height="75"/>
+        <element name="VEHICLE_TYPE" positionX="-54" positionY="9" width="128" height="120"/>
+        <element name="VEHICLE_USAGE" positionX="-63" positionY="-18" width="128" height="75"/>
+        <element name="VEHICLE_VARIANT" positionX="0" positionY="90" width="128" height="240"/>
+    </elements>
 </model>

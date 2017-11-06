@@ -24,7 +24,7 @@ class DataTableViewCell : BaseTableViewCell {
     @IBOutlet weak var dataText: UILabel!
     
     override func awakeFromNib() {
-        self.dataText?.font = UIFont.boldSystemFont(ofSize: 13)
+        self.dataText?.font = UIFont.boldSystemFont(ofSize: 12)
         self.dataText?.textColor = .black
     }
     

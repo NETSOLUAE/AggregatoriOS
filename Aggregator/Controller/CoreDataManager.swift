@@ -332,6 +332,7 @@ class CoreDataManager: NSObject {
             userInfoEntity.mobile = dictionary["mobile_no"] as? String
             userInfoEntity.nationalID = dictionary["national_id"] as? String
             userInfoEntity.email = dictionary["email"] as? String
+            userInfoEntity.employer = dictionary["employer"] as? String
             userInfoEntity.status = dictionary["status"] as? String
             userInfoEntity.companyID = dictionary["company_id"] as? String
             userInfoEntity.vehicleUsage = dictionary["vehicle_usage"] as? String
@@ -394,8 +395,12 @@ class CoreDataManager: NSObject {
             companyEntity.effectiveDate = dictionary["effectiveDate"] as? String ?? ""
             companyEntity.endDate = dictionary["endDate"] as? String ?? ""
             companyEntity.insurerName = dictionary["insurerName"] as? String ?? ""
+            let idv = dictionary["idv"] as? Int ?? 0
+            companyEntity.idv = "\(idv)"
             if dictionary["tax"] != nil {
-                companyEntity.tax = dictionary["tax"] as? String ?? ""
+                let tax = dictionary["tax"] as? Float ?? 0.00
+                let taxString = String(format: "%.2f", tax)
+                companyEntity.tax = "\(taxString)"
             } else {
                 companyEntity.tax = "None"
             }
@@ -429,19 +434,23 @@ class CoreDataManager: NSObject {
                 companyEntity.fees = fee
             }
             var coverPremium = ""
-            var coverAmount = 0
+            var coverAmount = 0.00
             if dictionary["coverPremiums"] != nil {
                 let coverPremiums = dictionary["coverPremiums"] as! [String:Any]
                 for (key, value) in coverPremiums {
-                    let amount = value as? Int ?? 0
-                    coverPremium = coverPremium + "\(key)\(" : ")\(amount)" + "\n"
-                    coverAmount = coverAmount + amount
+                    let amount = value as? Double ?? 0
+                    let amountString = String(format: "%.2f", amount)
+                    coverPremium = coverPremium + "\(key)\(" : ")\(amountString)" + "\n"
+                    coverAmount = coverAmount + Double(amountString)!
                 }
                 companyEntity.coverPremium = coverPremium
             }
-            let totalPremium = dictionary["totalPremium"] as? Int ?? 0
+            let totalPremium = dictionary["totalPremium"] as? Double ?? 0
+            let totalPremiumString = String(format: "%.2f", totalPremium)
+            companyEntity.premiumAmount = totalPremiumString
             coverAmount = coverAmount + totalPremium
-            companyEntity.totalPremium = "\(coverAmount)"
+//            companyEntity.totalPremium = "\(coverAmount)"
+            companyEntity.totalPremium = totalPremiumString
             if dictionary["covers"] != nil {
                 let dependent = dictionary["covers"] as! [[String:Any]]
                 for dependent in dependent {

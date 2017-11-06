@@ -33,17 +33,19 @@ class ReviewController: UIViewController {
     @IBOutlet weak var dateOfReg: UILabel!
     @IBOutlet weak var price: UILabel!
     @IBOutlet weak var thumbNailCollection: UICollectionView!
+    @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet weak var addressHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var addressTopConstraint: NSLayoutConstraint!
     @IBOutlet weak var addressBottomConstraint: NSLayoutConstraint!
+    @IBOutlet weak var scrollHeightConstraint: NSLayoutConstraint!
     override func viewDidLoad() {
         super.viewDidLoad()
         
         self.title = "Review"
         self.companyName.text = "\(currentCompanySelected.companyName)"
-        self.policyStart.text = "\(currentCompanySelected.policyStart)"
-        self.policyEnd.text = "\(currentCompanySelected.policyEnd)"
-        self.coverAmount.text = "\(currentCompanySelected.totalPremium)"
+        self.policyStart.text = "\("Policy Start: ")\(currentCompanySelected.policyStart)"
+        self.policyEnd.text = "\("Policy End: ")\(currentCompanySelected.policyEnd)"
+        self.coverAmount.text = "\(currentCompanySelected.totalPremium)\(" OMR")"
         self.name.text = "\(currentSelection.name)"
         self.age.text = "\(currentSelection.age)"
         self.mobile.text = "\(currentSelection.mobileNumber)"
@@ -55,8 +57,8 @@ class ReviewController: UIViewController {
         self.model.text = "\(currentSelection.modelName)"
         self.variant.text = "\(currentSelection.variantName)"
         self.placeOfReg.text = "\(currentSelection.rtoName)"
-        self.dateOfReg.text = "\(currentSelection.date)"
-        self.price.text = "\(currentSelection.price)"
+        self.dateOfReg.text = "\(currentSelection.vehicleRegDate)"
+        self.price.text = "\(currentSelection.price)\(" OMR")"
         
         if (self.addressOwner == "") {
             self.address.isHidden = true
@@ -66,10 +68,12 @@ class ReviewController: UIViewController {
             self.address.text = self.addressOwner
             let addressHeightCount = self.addressOwner.characters.filter{$0 == "\n"}.count
             if (addressHeightCount != 0) {
-                addressHeightConstraint.constant = CGFloat(addressHeightCount*21)
+                addressHeightConstraint.constant = CGFloat(addressHeightCount*15)
             }
             print("\("coverPremiumHeight:")\(addressHeightCount)")
         }
+        scrollHeightConstraint.constant = scrollHeightConstraint.constant + addressHeightConstraint.constant
+        self.scrollView.contentInset.bottom = scrollHeightConstraint.constant/3
         // Do any additional setup after loading the view, typically from a nib.
     }
     

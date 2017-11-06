@@ -2,8 +2,9 @@
 //  USER_INFO+CoreDataProperties.swift
 //  Aggregator
 //
-//  Created by Mac Mini on 9/9/17.
+//  Created by Mac Mini on 10/21/17.
 //  Copyright © 2017 Netsol. All rights reserved.
+//
 //
 
 import Foundation
@@ -33,5 +34,6 @@ extension USER_INFO {
     @NSManaged public var vehicleUsage: String?
     @NSManaged public var vehicleVariant: String?
     @NSManaged public var yom: String?
+    @NSManaged public var employer: String?
 
 }

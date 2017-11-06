@@ -97,37 +97,97 @@ class WebserviceManager: NSObject {
         let params: [String: Any]
         let authKey: [String: Any] = ["accesskey": "RMS", "secretkey": "RMS"]
         
-        let vehicleID = userInfoDict["make"]! + "^" + userInfoDict["modal"]! + "^" + userInfoDict["variant"]!;
+        let vehicleID = currentSelection.makeID + "^" + currentSelection.modelID + "^" + currentSelection.variantID;
         
-        let date = Date.init(timeIntervalSinceNow: 1)
+        //RegistrationDate Formatting
+        let insuranceStartDate = currentSelection.insuranceStartDate
+        let vehicleRegDate = userInfoDict["registration_date"]!
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let todatDate = dateFormatter.string(from: date)
-        
-        let string = userInfoDict["registration_date"]!
-        
-        let tempLocale = dateFormatter.locale // save locale temporarily
-        dateFormatter.locale = Locale(identifier: "en_US_POSIX") // set locale to reliable US_POSIX
+        let tempLocale = dateFormatter.locale
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         dateFormatter.dateFormat = "dd-MM-yyyy"
-        let regdate = dateFormatter.date(from: string)!
+        let regdate = dateFormatter.date(from: vehicleRegDate)!
+        let insureStartDate = dateFormatter.date(from: insuranceStartDate)!
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        dateFormatter.locale = tempLocale // reset the locale
+        dateFormatter.locale = tempLocale
         let regdateString = dateFormatter.string(from: regdate)
+        let policyStartDate = dateFormatter.string(from: insureStartDate)
         print("EXACT_DATE : \(regdateString)")
         
-//        let index = regdateString.index(regdateString.startIndex, offsetBy: 4)
-//        let yom = regdateString.substring(to: index)
+        //Policy Start Date
+        let policyStartDateString = currentSelection.insuranceStartDate
         
-        params = ["authentication": authKey, "usageType" : userInfoDict["vehicle_usage"]!,
-                  "vehicleType" : userInfoDict["usage_type"]!,
+        //Previous Policy End Sate
+        let currentDate = policyStartDateString.substring(to: policyStartDateString.index(policyStartDateString.startIndex, offsetBy: 2))
+        
+        let start = policyStartDateString.index(policyStartDateString.startIndex, offsetBy: 3)
+        let end = policyStartDateString.index(policyStartDateString.endIndex, offsetBy: -5)
+        let range = start..<end
+        
+        let currentMonth = policyStartDateString.substring(with: range)
+        
+        let index = policyStartDateString.index(policyStartDateString.startIndex, offsetBy: 6)
+        let currentYear = policyStartDateString.substring(from: index)
+        
+        var previousdate = "\(Int(currentDate)!)"
+        var previousmonth = "\(Int(currentMonth)!)"
+        if (previousdate.length == 1) {
+            previousdate = "\("0")\(previousdate)"
+        }
+        if (previousmonth.length == 1) {
+            previousmonth = "\("0")\(previousmonth)"
+        }
+        
+        var nextYear = ""
+        if (previousdate == "01" && previousmonth == "01") {
+            nextYear = "\(Int(currentYear)!-1)"
+            previousmonth = "\("12")"
+            previousdate = "\("31")"
+        } else if (previousdate == "01") {
+            nextYear = "\(Int(currentYear)!)"
+            previousmonth = "\(Int(currentMonth)!-1)"
+            if (previousmonth.length == 1) {
+                previousmonth = "\("0")\(previousmonth)"
+            }
+            if (previousmonth == "03" || previousmonth == "05" || previousmonth == "07"
+                || previousmonth == "08" || previousmonth == "10" || previousmonth == "12") {
+                previousdate = "\("31")"
+            } else if (previousmonth == "04" || previousmonth == "06" || previousmonth == "09"
+                || previousmonth == "11") {
+                previousdate = "\("30")"
+            } else if (previousmonth == "02") {
+                if Int(nextYear)! % 4 == 0 {
+                    previousdate = "\("29")"
+                    print("\(nextYear) is leap year")
+                } else {
+                    previousdate = "\("28")"
+                    print("\(previousmonth) is normal year")
+                }
+            }
+        } else {
+            nextYear = "\(Int(currentYear)!)"
+            previousdate = "\(Int(currentDate)!-1)"
+            previousmonth = currentMonth
+            if (previousdate.length == 1) {
+                previousdate = "\("0")\(previousdate)"
+            }
+        }
+        
+        let endYear = "\(nextYear)\("-")\(previousmonth)\("-")\(previousdate)"
+        //Formatting Completed
+        
+        params = ["authentication": authKey,
+                  "usageType" : currentSelection.usageId,
+                  "vehicleType" : currentSelection.typeID,
                   "vehicleId" : vehicleID,
                   "vehicleRegistrationDate" : regdateString,
-                  "vehicleAge" : "0",
+                  "vehicleAge" : currentCompanySelected.vehicleAge,
                   "price" : userInfoDict["price"]!,
-                  "policyStartDate" : todatDate,
+                  "policyStartDate" : policyStartDate,
+                  "prePolicyEndDate" : endYear,
                   "claim" : "N",
                   "numClaims" : "0",
-                  "rto" : userInfoDict["rto"]!,
+                  "rto" : currentSelection.rtoID,
                   "yom" : userInfoDict["year_of_manufacture"]!,
                   "insuredAge" : userInfoDict["age"]!]
         
@@ -168,10 +228,8 @@ class WebserviceManager: NSObject {
                         }
                     } else {
                         let error = json["error"]
-                        if (error?.contains("Invalid YOM"))! {
-                            DispatchQueue.main.async {
-                                completion(.Error(error as! String))
-                            }
+                        DispatchQueue.main.async {
+                            completion(.Error(error as! String))
                         }
                         print(error ?? "")
                     }

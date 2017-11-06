@@ -1,15 +1,15 @@
 //
-//  CustomAlert.swift
+//  CustomAlertBreakup.swift
 //  Aggregator
 //
-//  Created by Mac Mini on 9/9/17.
+//  Created by Mac Mini on 9/19/17.
 //  Copyright © 2017 Netsol. All rights reserved.
 //
 
 import UIKit
 import CoreData
 
-class CustomAlert: UIViewController {
+class CustomAlertBreakup: UIViewController {
     let transitioner = CAVTransitioner()
     
     var covers = ""

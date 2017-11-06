@@ -13,14 +13,19 @@ import Foundation
 class CompareViewController: UIViewController {
     
     var selectedCompanyProductID = [String]()
+    var coverSelected = false
     var selectedCovers = [String]()
+    var checkedCovers = [String]()
+    var coverPremiumTextArray = [String]()
     var covertext = ""
     var attributeHeight = 0
     var feeHeight = 0
     var coverPremiumHeight = 0
+    var finalHeight = 0
     let constants = Constants()
     let webserviceManager = WebserviceManager();
     var selectedCompanyDetails = [COMPANY_DETAILS]()
+    var stackView = [UIStackView]()
     let sharedInstance = CoreDataManager.sharedInstance;
     let managedContext = CoreDataManager.sharedInstance.persistentContainer.viewContext
     let persistentContainer = NSPersistentContainer.init(name: "Aggregator")
@@ -48,16 +53,52 @@ class CompareViewController: UIViewController {
         return fetchedResultsController
     }()
     
-    @IBOutlet weak var collectionView: UICollectionView!
     override func viewDidLoad() {
         super.viewDidLoad()
         
         self.title = "Compare and Apply"
         load()
         let company = companyController.fetchedObjects
+        var i = 0;
         for company in company! {
             if (selectedCompanyProductID.contains(company.productID!)) {
                 selectedCompanyDetails.append(company)
+                
+                let coverDictionary: NSMutableDictionary = NSMutableDictionary()
+                let coverPremiumText = company.coverPremium
+                let coverArray =  coverPremiumText?.components(separatedBy: .newlines)
+                for cover in coverArray! {
+                    let key = cover.components(separatedBy: " :")
+                    if let range = cover.range(of: ": ") {
+                        let value = cover.substring(from: range.upperBound)
+                        print(value)
+                        coverDictionary.setValue(value, forKey: key[0].uppercased())
+                    }
+                    print(key)
+                }
+                var selectedCoverPremiumText = ""
+                if let odValue = coverDictionary["OD"] {
+                    i = i + 1
+                    selectedCoverPremiumText = "\("OD : ")\(odValue)\("\n")"
+                    print("Result error: \(odValue)")
+                }
+                if let tpValue = coverDictionary["TP"] {
+                    i = i + 1
+                    selectedCoverPremiumText = "\("TP : ")\(tpValue)\("\n")"
+                    print("Result error: \(tpValue)")
+                }
+                for checkedCover in checkedCovers {
+                    let coverID = self.getCoverIdByCoverName(coverName: checkedCover)
+                    if (coverID != "OD" && coverID != "TP") {
+                        if let coverValue = coverDictionary[coverID] {
+                            i = i + 1
+                            selectedCoverPremiumText = selectedCoverPremiumText + "\(coverID)\(" : ")\(coverValue)\("\n")"
+                            print("Result error: \(coverValue)")
+                        }
+                    }
+                }
+                coverPremiumTextArray.append(selectedCoverPremiumText)
+                
                 let str = company.attribute!
                 let count = str.characters.filter{$0 == "\n"}.count
                 if (count > attributeHeight) {
@@ -70,10 +111,14 @@ class CompareViewController: UIViewController {
                     feeHeight = feecount
                 }
                 print("\("feeHeight:")\(feeHeight)") // 4
-                let coverstr = company.coverPremium!
-                let covercount = coverstr.characters.filter{$0 == "\n"}.count
+//                let coverstr = company.coverPremium!
+                let covercount = selectedCoverPremiumText.characters.filter{$0 == "\n"}.count
                 if (covercount > coverPremiumHeight) {
-                    coverPremiumHeight = covercount
+                    if (covercount == 1) {
+                        coverPremiumHeight = covercount + covercount
+                    } else {
+                        coverPremiumHeight = covercount
+                    }
                 }
                 print("\("coverPremiumHeight:")\(coverPremiumHeight)") // 4
             }
@@ -88,6 +133,8 @@ class CompareViewController: UIViewController {
                 }
             }
         }
+        finalHeight = 315+(attributeHeight*18)+(coverPremiumHeight*18)+(feeHeight*18)+((selectedCovers.count * 15) + (selectedCovers.count * 5))
+//        loadStackView()
 //        collectionView!.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
         // Do any additional setup after loading the view, typically from a nib.
     }
@@ -152,91 +199,56 @@ class CompareViewController: UIViewController {
         return id
     }
     
+    func getCoverIdByCoverName(coverName: String) -> String {
+        let predicate = NSPredicate(format: "coverName == %@", coverName)
+        self.coverController.fetchRequest.predicate = predicate
+        do {
+            try self.coverController.performFetch()
+        } catch {
+            let fetchError = error as NSError
+            print("Unable to Perform Fetch Request")
+            print("\(fetchError), \(fetchError.localizedDescription)")
+        }
+        let coverInfo = coverController.fetchedObjects
+        let coverId = (coverInfo?.first?.coverID) ?? ""
+        return coverId
+    }
+    
     func sendPolicyDetails(params: String) -> Void {
         self.webserviceManager.login(type: "double", endPoint: params) { (result) in
             LoadingIndicatorView.hideInMain()
             let storyboard = UIStoryboard(name: "Main", bundle: nil)
-            let compareController = storyboard.instantiateViewController(withIdentifier: "OwnerDetailsController") as! OwnerDetailsController
-            compareController.fromInsurer = true
-            self.show(compareController, sender: self)
+            let ownerDetailsController = storyboard.instantiateViewController(withIdentifier: "OwnerDetailsController") as! OwnerDetailsController
+            ownerDetailsController.fromInsurer = true
+            self.show(ownerDetailsController, sender: self)
         }
     }
-}
-extension CompareViewController : UICollectionViewDataSource,UICollectionViewDelegate {
     
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
-        return 1
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return selectedCompanyDetails.count+1
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CompareCell", for: indexPath) as! CompareCellView
-        cell.attributeHeightConstraint.constant = CGFloat(attributeHeight * 18)
-        cell.feesHeightConstraint.constant = CGFloat(feeHeight * 18)
-        cell.coverPremiumHeightConstraint.constant = CGFloat(coverPremiumHeight * 18)
-        cell.coverHeightConstraint.constant = CGFloat((selectedCovers.count * 15) + (selectedCovers.count * 5))
-        let indexCount = indexPath.row
-        print(indexCount)
-        if (indexPath.row == 0) {
-            cell.companyName.font = UIFont.systemFont(ofSize: 15.0)
-            cell.companyName.text = "Company Name"
-            cell.productName.text = "Product Name"
-            cell.primium.text = "Primium"
-            cell.attributes.text = "Attributes"
-            cell.fees.text = "Fees"
-            cell.coverPremium.text = "Cover Premium"
-            cell.coverHeading.text = "Covers"
-            cell.coverHeading.isHidden = false
-            cell.buyButton.isHidden = true
-            cell.covers.isHidden = true
-        } else {
-            cell.coverHeading.isHidden = true
-            cell.covers.isHidden = false
-            cell.buyButton.isHidden = false
-            cell.companyName.font = UIFont.boldSystemFont(ofSize: 15.0)
-            let company = selectedCompanyDetails[indexPath.row-1 ] as COMPANY_DETAILS
-            cell.companyName.text = company.insurerName
-            cell.productName.text = company.productName
-            cell.primium.text = company.totalPremium
-            cell.attributes.text = company.attribute
-            cell.fees.text = company.fees
-            cell.coverPremium.text = company.coverPremium
-            cell.cellDelegate = self
-            cell.buyButton.tag = indexPath.row-1
-            
-            getCoverNames(productID: company.productID!)
-            let covers = coverController.fetchedObjects
-            
-            for view in cell.covers.subviews {
-                if (view is UIStackView) {
-                    if view.tag != indexPath.row {
-                        view.removeFromSuperview()
-                    }
-                }
-            }
-            
+    func loadStackView() -> Void {
+        var i = 0
+        for company in selectedCompanyDetails {
+            self.getCoverNames(productID: company.productID!)
+            let covers = self.coverController.fetchedObjects
+
             //Stack View Vertical
             let stackViewV   = UIStackView()
-            stackViewV.tag = indexPath.row
+            stackViewV.tag = i
             stackViewV.axis  = UILayoutConstraintAxis.vertical
             stackViewV.distribution  = UIStackViewDistribution.equalSpacing
             stackViewV.alignment = UIStackViewAlignment.center
             stackViewV.spacing   = 5.0
             stackViewV.translatesAutoresizingMaskIntoConstraints = false
-            
+
             for selectedCover in selectedCovers {
                 let coverName = selectedCover
                 var exist = false
-                
+
                 //Image View
                 let imageView = UIImageView()
                 imageView.backgroundColor = UIColor.clear
                 imageView.heightAnchor.constraint(equalToConstant: 12.0).isActive = true
                 imageView.widthAnchor.constraint(equalToConstant: 12.0).isActive = true
-                
+
                 if (selectedCovers.count == covers?.count){
                     imageView.image = UIImage(named: "right")
                 } else {
@@ -253,96 +265,71 @@ extension CompareViewController : UICollectionViewDataSource,UICollectionViewDel
                         imageView.image = UIImage(named: "wrong")
                     }
                 }
-                
+
                 //Text Label
                 let textLabel = UILabel()
                 textLabel.backgroundColor = UIColor.clear
-                textLabel.font = UIFont.systemFont(ofSize: 15.0)
-                textLabel.widthAnchor.constraint(equalToConstant: self.view.frame.width).isActive = true
+                textLabel.font = UIFont.systemFont(ofSize: 12.0)
+                textLabel.widthAnchor.constraint(equalToConstant: stackViewV.frame.width).isActive = true
                 textLabel.heightAnchor.constraint(equalToConstant: 15.0).isActive = true
                 textLabel.text  = coverName
                 textLabel.textAlignment = .left
-                
+
                 //Stack View Horizontal
                 let stackView   = UIStackView()
                 stackView.axis  = UILayoutConstraintAxis.horizontal
                 stackView.distribution  = UIStackViewDistribution.equalSpacing
                 stackView.alignment = UIStackViewAlignment.center
                 stackView.spacing   = 8.0
-                
+
                 stackView.addArrangedSubview(imageView)
                 stackView.addArrangedSubview(textLabel)
                 stackView.translatesAutoresizingMaskIntoConstraints = false
-                
+
                 stackViewV.addArrangedSubview(stackView)
                 stackViewV.translatesAutoresizingMaskIntoConstraints = false
-                
+
                 stackViewV.addSubview(stackView)
+                self.stackView.append(stackViewV)
+                i = i + 1
             }
-            
-            cell.covers.addSubview(stackViewV)
-            stackViewV.topAnchor.constraint(equalTo: cell.covers.topAnchor,
-                                            constant: 5).isActive=true
-            stackViewV.leftAnchor.constraint(equalTo: cell.covers.leftAnchor, constant: -5).isActive = true
         }
-        return cell;
     }
 }
 
-extension CompareViewController : CompanyDelegate {
-    func didPressButton(sender: UIButton) {
-        LoadingIndicatorView.show("Fetching...")
-        let indexPath = IndexPath(item: sender.tag, section: 0)
-        var company: COMPANY_DETAILS;
-        company = selectedCompanyDetails[indexPath.row] as COMPANY_DETAILS
-        print("I have pressed a button with a tag: \(sender.tag)")
-        
-        currentCompanySelected.companyName = company.insurerName!
-        currentCompanySelected.totalPremium = company.totalPremium!
-        
-        let date = Date.init(timeIntervalSinceNow: 1)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "dd-MM-yyyy"
-        let startPolicy = dateFormatter.string(from: date)
-        currentCompanySelected.policyStart = startPolicy
-        
-        let currentDate = startPolicy.substring(to: startPolicy.index(startPolicy.startIndex, offsetBy: 2))
-        
-        let start = startPolicy.index(startPolicy.startIndex, offsetBy: 3)
-        let end = startPolicy.index(startPolicy.endIndex, offsetBy: -5)
-        let range = start..<end
-        
-        let currentMonth = startPolicy.substring(with: range)  // play
-        
-        let index = startPolicy.index(startPolicy.startIndex, offsetBy: 6)
-        let currentYear = startPolicy.substring(from: index)  // playground
-        var previousdate = "\(Int(currentDate)!-1)"
-        var previousmonth = "\(Int(currentMonth)!)"
-        if (previousdate.length == 1) {
-            previousdate = "\("0")\(previousdate)"
-        }
-        if (previousmonth.length == 1) {
-            previousmonth = "\("0")\(previousmonth)"
-        }
-        let endYear = "\(previousdate)\("-")\(previousmonth)\("-")\((Int(currentYear)!+1))"
-        currentCompanySelected.policyEnd = endYear
-        
-        let userId = getUserId(nationalID: currentSelection.nationalID)
-        var params = ""
-        params = params + "\(constants.BASE_URL)\("savePolicy&id=")\(userId)\("&company_id=")\(company.productID ?? "")"
-        getCoverNames(productID: company.productID!)
-        let covers = coverController.fetchedObjects
-        var appendedCover = ""
-        var i = 0
-        for cover in covers! {
-            let coverId = cover.coverID ?? ""
-            let coverName = cover.coverName ?? ""
-            appendedCover = appendedCover + "\("&add_ons[")\(i)\("][add_on_id]=")\(coverId)\("&add_ons[")\(i)\("][title]=")\(coverName)\("&add_ons[")\(i)\("][status]=Yes"))"
-            i = i + 1
-        }
-        params = params + appendedCover
-        let encodedHost = NSString(format: params as NSString).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        self.sendPolicyDetails(params: "\(encodedHost)")
+extension CompareViewController: UITableViewDataSource, UITableViewDelegate {
+    
+    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        return 0
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 1
+    }
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return CGFloat(finalHeight)
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell") as! CompareTableViewCell
+        cell.attributeHeight = attributeHeight
+        cell.coverPremiumHeight = coverPremiumHeight
+        cell.covertext = covertext
+        cell.coverSelected = coverSelected
+        cell.feeHeight = feeHeight
+        cell.selectedCompanyProductID = selectedCompanyProductID
+        cell.selectedCompanyDetails = selectedCompanyDetails
+//        cell.stackView = stackView
+        cell.selectedCovers = selectedCovers
+        cell.coverPremiumTextArray = coverPremiumTextArray
+        cell.buyDelegate = self
+        return cell
+    }
+}
+
+extension CompareViewController: BuyDelegate {
+    func didBuyButtonPrssed(params: String) {
+        self.sendPolicyDetails(params: params)
     }
 }
 

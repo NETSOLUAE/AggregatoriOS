@@ -12,7 +12,7 @@ import CoreData
 
 class PersonalDetailsController: UIViewController, IndicatorInfoProvider {
     
-    var itemInfo: IndicatorInfo = IndicatorInfo(title: "PersonalDetails")
+    var itemInfo: IndicatorInfo = IndicatorInfo(title: "Personal Details")
     let constants = Constants()
     let webserviceManager = WebserviceManager();
     let sharedInstance = CoreDataManager.sharedInstance;

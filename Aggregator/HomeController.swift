@@ -11,7 +11,6 @@ import CoreData
 import Foundation
 
 class HomeController: UIViewController, UITextFieldDelegate {
-    
     var usageId = ""
     var typeID = ""
     var makeID = ""
@@ -27,9 +26,13 @@ class HomeController: UIViewController, UITextFieldDelegate {
     var rtoName = ""
     var year = ""
     
-    var dateSelected = ""
+    var vehicleRegDate = ""
+    var insurStartDate = ""
+    var originalPrice = ""
+    var vehicleOriginalPrice = ""
     var activeField: UITextField?
     var isNewPolicy = true
+    var isVehicleDate = false
     var yomList = [String]()
     let constants = Constants()
     let webserviceManager = WebserviceManager()
@@ -80,6 +83,21 @@ class HomeController: UIViewController, UITextFieldDelegate {
         return fetchedResultsController
     }()
     
+    lazy var companyController: NSFetchedResultsController<COMPANY_DETAILS> = {
+        let fetchRequest: NSFetchRequest<COMPANY_DETAILS> = COMPANY_DETAILS.fetchRequest()
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "premiumAmount", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))]
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.managedContext, sectionNameKeyPath: nil, cacheName: nil)
+        fetchedResultsController.delegate = self
+        return fetchedResultsController
+    }()
+    
+    @IBOutlet weak var usageView: UIView!
+    @IBOutlet weak var typeView: UIView!
+    @IBOutlet weak var makeView: UIView!
+    @IBOutlet weak var modelView: UIView!
+    @IBOutlet weak var variantView: UIView!
+    @IBOutlet weak var rtoView: UIView!
+    @IBOutlet weak var yomView: UIView!
     @IBOutlet weak var usageTable: UITableView!
     @IBOutlet weak var typeTable: UITableView!
     @IBOutlet weak var makeTable: UITableView!
@@ -94,7 +112,8 @@ class HomeController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var variant: UIButton!
     @IBOutlet weak var rto: UIButton!
     @IBOutlet weak var yom: UIButton!
-    @IBOutlet weak var date: UIButton!
+    @IBOutlet weak var vehicleRegDateDate: UIButton!
+    @IBOutlet weak var insuranceStartDate: UIButton!
     @IBOutlet weak var newPolicy: UIButton!
     @IBOutlet weak var existingPolicy: UIButton!
     @IBOutlet weak var price: UITextField!
@@ -107,88 +126,136 @@ class HomeController: UIViewController, UITextFieldDelegate {
         self.slideMenuController()?.openLeft()
     }
     @IBAction func selectUsage(_ sender: Any) {
-        self.usageTable.isHidden = !self.usageTable.isHidden
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
-        if (!self.usageTable.isHidden) {
+        self.usageView.isHidden = !self.usageView.isHidden
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
+        if (!self.usageView.isHidden) {
             self.view.bringSubview(toFront: self.usageTable)
         }
     }
     @IBAction func selectType(_ sender: Any) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = !self.typeTable.isHidden
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = !self.typeView.isHidden
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
     }
     @IBAction func selectMake(_ sender: Any) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = !self.makeTable.isHidden
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = !self.makeView.isHidden
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
     }
     @IBAction func selectModel(_ sender: Any) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = !self.modelTable.isHidden
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = !self.modelView.isHidden
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
+        
+        self.view.bringSubview(toFront: self.modelView)
     }
     @IBAction func selectVariant(_ sender: Any) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = !self.variantTable.isHidden
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = !self.variantView.isHidden
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
     }
     @IBAction func selectRto(_ sender: Any) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = !self.rtoTable.isHidden
-        self.yomTable.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = !self.rtoView.isHidden
+        self.yomView.isHidden = true
     }
     @IBAction func selectYom(_ sender: Any) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.yomTable.isHidden = !self.yomTable.isHidden
-        self.rtoTable.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.yomView.isHidden = !self.yomView.isHidden
+        self.rtoView.isHidden = true
     }
-    @IBAction func selectDate(_ sender: Any) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
-        self.date.setTitle(self.dateSelected, for: .normal)
+    @IBAction func selectVehicleRegDateDate(_ sender: Any) {
+        self.isVehicleDate = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
+        self.vehicleRegDateDate.setTitle(self.vehicleRegDate, for: .normal)
         self.datePicker.isHidden = !self.datePicker.isHidden
         self.dateTool.isHidden = !self.dateTool.isHidden
+        
+        self.datePicker.maximumDate = Date()
+        self.datePicker.minimumDate = Calendar.current.date(byAdding: .year, value: -100, to: Date())
+    }
+    @IBAction func selectInsuranceStartDate(_ sender: Any) {
+        self.isVehicleDate = false
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
+        self.insuranceStartDate.setTitle(self.insurStartDate, for: .normal)
+        self.datePicker.isHidden = !self.datePicker.isHidden
+        self.dateTool.isHidden = !self.dateTool.isHidden
+        self.datePicker.minimumDate = Date()
+        self.datePicker.maximumDate = Calendar.current.date(byAdding: .year, value: 100, to: Date())
     }
     @IBAction func nextPressed(_ sender: Any) {
-        if (self.usageId == "" || self.typeID == "" || self.makeID == "" || self.modelID == ""
-            || self.variantID == "" || self.rtoID == "" || self.dateSelected == "" || self.price.text == "") {
+        
+//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+//        let aboutController = storyboard.instantiateViewController(withIdentifier: "WebPaymentController") as! WebPaymentController
+//        self.show(aboutController, sender: self)
+        
+        self.datePicker.isHidden = true
+        self.dateTool.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
+        
+        let strDate = self.vehicleRegDate
+        let index = strDate.index(strDate.startIndex, offsetBy: 6)
+        let vehicleRegYear = strDate.substring(from: index)
+        let vehicleYear = Int(vehicleRegYear) ?? 0
+        let selectedYom = Int(self.year) ?? 0
+        
+        if (self.usageId == "" || self.typeID == "" || self.makeID == "" || self.modelID == "" || self.year == ""
+            || self.variantID == "" || self.rtoID == "" || self.insurStartDate == "" || self.vehicleRegDate == "" || self.price.text == "") {
             self.alertDialog (heading: "", message: "All fields are mandatory");
+        } else if (selectedYom > vehicleYear) {
+            self.alertDialog (heading: "", message: "Year of Manufacture should not exceed Date of Registration");
+        } else if (!checkRange(originalPrice: self.originalPrice, currentPrice: self.price.text!)) {
+            self.alertDialog (heading: "", message: "Price should be + or - 10 percent of Current Vehicle Price");
         } else {
+            self.view.endEditing(true)
+            deregisterFromKeyboardNotifications()
             let storyboard = UIStoryboard(name: "Main", bundle: nil)
             let aboutController = storyboard.instantiateViewController(withIdentifier: "AboutController") as! AboutController
             aboutController.selectedusageId = self.usageId
@@ -204,12 +271,13 @@ class HomeController: UIViewController, UITextFieldDelegate {
             aboutController.selectedvariantName = self.variantName
             aboutController.selectedrtoName = self.rtoName
             aboutController.selectedyom = self.year
-            aboutController.selecteddate = self.dateSelected
+            aboutController.selectedVehicleRegDate = self.vehicleRegDate
+            aboutController.selectedPolicyStartDate = self.insurStartDate
             aboutController.selectedprice = self.price.text ?? ""
             if (isNewPolicy) {
-                aboutController.selectedPolicy = "New Policy"
+                aboutController.selectedPolicy = "Motor Comprehensive"
             } else {
-                aboutController.selectedPolicy = "Existing Policy"
+                aboutController.selectedPolicy = "Motor Third Party"
             }
             self.show(aboutController, sender: self)
         }
@@ -221,8 +289,65 @@ class HomeController: UIViewController, UITextFieldDelegate {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd-MM-yyyy"
         let strDate = dateFormatter.string(from: datePicker.date)
-        self.dateSelected = strDate
-        self.date.setTitle(self.dateSelected, for: .normal)
+        if (isVehicleDate) {
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
+            self.vehicleRegDate = strDate
+            self.vehicleRegDateDate.setTitle(self.vehicleRegDate, for: .normal)
+        } else {
+            self.insurStartDate = strDate
+            self.insuranceStartDate.setTitle(self.insurStartDate, for: .normal)
+            
+            if (isNewPolicy) {
+                let strDate = self.vehicleRegDate
+                let index = strDate.index(strDate.startIndex, offsetBy: 6)
+                let vehicleRegYear = strDate.substring(from: index)
+                let vehicleYear = Int(vehicleRegYear) ?? 0
+                let selectedYom = Int(self.year) ?? 0
+                
+                if (self.usageId == "" || self.typeID == "" || self.makeID == "" || self.modelID == "" || self.year == ""
+                    || self.variantID == "" || self.rtoID == "" || self.insurStartDate == "" || self.vehicleRegDate == "") {
+                    self.alertDialog (heading: "", message: "All fields are mandatory");
+                } else if (selectedYom > vehicleYear) {
+                    self.alertDialog (heading: "", message: "Year of Manufacture should not exceed Date of Registration");
+                } else {
+                    let date = Date.init(timeIntervalSinceNow: 1)
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "dd-MM-yyyy"
+                    let strDate = dateFormatter.string(from: date)
+                    let cindex = strDate.index(strDate.startIndex, offsetBy: 6)
+                    let currentyear = strDate.substring(from: cindex)
+                    let vehicleAge = Int(currentyear)! - Int(self.year)!
+                    currentCompanySelected.vehicleAge = "\(vehicleAge)"
+                    
+                    if (vehicleAge > 0) {
+                        LoadingIndicatorView.show("Getting Price..")
+                        
+                        currentSelection.usageId = self.usageId
+                        currentSelection.typeID = self.typeID
+                        currentSelection.makeID = self.makeID
+                        currentSelection.modelID = self.modelID
+                        currentSelection.variantID = self.variantID
+                        currentSelection.rtoID = self.rtoID
+                        currentSelection.insuranceStartDate = self.insurStartDate
+                        
+                        let userInfoDict: [String: String] =
+                            ["year_of_manufacture" : self.year,
+                             "registration_date" : self.vehicleRegDate,
+                             "age" : "27",
+                             "price" : self.originalPrice]
+                        
+                        self.getVehicleDetails(userDict: userInfoDict, params: self.constants.COMPANY_DETAILS)
+                    } else {
+                        self.originalPrice = self.vehicleOriginalPrice
+                        self.price.text = self.vehicleOriginalPrice
+                    }
+                }
+            } else {
+                self.originalPrice = self.vehicleOriginalPrice
+                self.price.text = self.vehicleOriginalPrice
+            }
+        }
         self.datePicker.isHidden = !self.datePicker.isHidden
         self.dateTool.isHidden = !self.dateTool.isHidden
     }
@@ -231,24 +356,52 @@ class HomeController: UIViewController, UITextFieldDelegate {
         self.dateTool.isHidden = !self.dateTool.isHidden
     }
     @IBAction func newPolicySelected(_ sender: Any) {
+        self.view.endEditing(true)
+        deregisterFromKeyboardNotifications()
+        self.insuranceStartDate.setTitle("                ", for: .normal)
+        self.price.text = ""
+        self.datePicker.isHidden = true
+        self.dateTool.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
         newPolicy.setBackgroundImage(UIImage(named: "radio-selected.png"), for: UIControlState.normal)
         existingPolicy.setBackgroundImage(UIImage(named: "radio.png"), for: UIControlState.normal)
         if (!isNewPolicy) {
             isNewPolicy = !isNewPolicy
         }
+        registerForKeyboardNotifications()
     }
     @IBAction func existingPolicySelected(_ sender: Any) {
+        self.view.endEditing(true)
+        deregisterFromKeyboardNotifications()
+        self.insuranceStartDate.setTitle("                ", for: .normal)
+        self.price.text = ""
+        self.datePicker.isHidden = true
+        self.dateTool.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
         newPolicy.setBackgroundImage(UIImage(named: "radio.png"), for: UIControlState.normal)
         existingPolicy.setBackgroundImage(UIImage(named: "radio-selected.png"), for: UIControlState.normal)
         if (isNewPolicy) {
             isNewPolicy = !isNewPolicy
         }
+        registerForKeyboardNotifications()
     }
     override func viewDidLoad() {
         super.viewDidLoad()
         load()
         
-        self.title = ""
+        self.title = " "
         self.addLeftBarButtonWithImage(UIImage(named: "hamburger")!)
         self.slideMenuController()?.removeLeftGestures()
         self.slideMenuController()?.addLeftGestures()
@@ -260,14 +413,58 @@ class HomeController: UIViewController, UITextFieldDelegate {
         self.variant.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
         self.rto.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
         self.yom.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
-        self.date.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
+        self.vehicleRegDateDate.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
+        self.insuranceStartDate.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
+        
+        self.usageView.backgroundColor = UIColor.clear
+        self.usageView.layer.shadowColor = UIColor.darkGray.cgColor
+        self.usageView.layer.shadowOffset = CGSize(width: 2.0, height: 2.0)
+        self.usageView.layer.shadowOpacity = 1.0
+        self.usageTable.layer.masksToBounds = true
+        
+        self.typeView.backgroundColor = UIColor.clear
+        self.typeView.layer.shadowColor = UIColor.darkGray.cgColor
+        self.typeView.layer.shadowOffset = CGSize(width: 2.0, height: 2.0)
+        self.typeView.layer.shadowOpacity = 1.0
+        self.typeTable.layer.masksToBounds = true
+        
+        self.makeView.backgroundColor = UIColor.clear
+        self.makeView.layer.shadowColor = UIColor.darkGray.cgColor
+        self.makeView.layer.shadowOffset = CGSize(width: 2.0, height: 2.0)
+        self.makeView.layer.shadowOpacity = 1.0
+        self.makeTable.layer.masksToBounds = true
+        
+        self.modelView.backgroundColor = UIColor.clear
+        self.modelView.layer.shadowColor = UIColor.darkGray.cgColor
+        self.modelView.layer.shadowOffset = CGSize(width: 2.0, height: 2.0)
+        self.modelView.layer.shadowOpacity = 1.0
+        self.modelTable.layer.masksToBounds = true
+        
+        self.variantView.backgroundColor = UIColor.clear
+        self.variantView.layer.shadowColor = UIColor.darkGray.cgColor
+        self.variantView.layer.shadowOffset = CGSize(width: 2.0, height: 2.0)
+        self.variantView.layer.shadowOpacity = 1.0
+        self.variantTable.layer.masksToBounds = true
+        
+        self.rtoView.backgroundColor = UIColor.clear
+        self.rtoView.layer.shadowColor = UIColor.darkGray.cgColor
+        self.rtoView.layer.shadowOffset = CGSize(width: 2.0, height: 2.0)
+        self.rtoView.layer.shadowOpacity = 1.0
+        self.rtoTable.layer.masksToBounds = true
+        
+        self.yomView.backgroundColor = UIColor.clear
+        self.yomView.layer.shadowColor = UIColor.darkGray.cgColor
+        self.yomView.layer.shadowOffset = CGSize(width: 2.0, height: 2.0)
+        self.yomView.layer.shadowOpacity = 1.0
+        self.yomTable.layer.masksToBounds = true
+        
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
         self.datePicker.isHidden = true
         self.dateTool.isHidden = true
         
@@ -280,9 +477,10 @@ class HomeController: UIViewController, UITextFieldDelegate {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "dd-MM-yyyy"
         let strDate = dateFormatter.string(from: date)
-        self.dateSelected = strDate
-        self.date.setTitle(self.dateSelected, for: .normal)
-        self.datePicker.minimumDate = Date()
+        self.vehicleRegDate = strDate
+        self.insurStartDate = strDate
+        self.vehicleRegDateDate.setTitle(self.vehicleRegDate, for: .normal)
+        self.insuranceStartDate.setTitle("                ", for: .normal)
         
         self.datePicker.backgroundColor = UIColor(hex: "#EBEBEB")
         self.dateTool.backgroundColor = UIColor(hex: "#EBEBEB")
@@ -318,6 +516,7 @@ class HomeController: UIViewController, UITextFieldDelegate {
         
         self.slideMenuController()?.removeLeftGestures()
         self.slideMenuController()?.addLeftGestures()
+        registerForKeyboardNotifications()
         
         super.viewWillAppear(animated)
     }
@@ -390,13 +589,13 @@ class HomeController: UIViewController, UITextFieldDelegate {
     }
     
     func tapFunction(sender:UITapGestureRecognizer) {
-        self.usageTable.isHidden = true
-        self.typeTable.isHidden = true
-        self.makeTable.isHidden = true
-        self.modelTable.isHidden = true
-        self.variantTable.isHidden = true
-        self.rtoTable.isHidden = true
-        self.yomTable.isHidden = true
+        self.usageView.isHidden = true
+        self.typeView.isHidden = true
+        self.makeView.isHidden = true
+        self.modelView.isHidden = true
+        self.variantView.isHidden = true
+        self.rtoView.isHidden = true
+        self.yomView.isHidden = true
     }
     
     func load(){
@@ -412,6 +611,7 @@ class HomeController: UIViewController, UITextFieldDelegate {
                     try self.modelController.performFetch()
                     try self.variantController.performFetch()
                     try self.rtoController.performFetch()
+                    try self.companyController.performFetch()
                 } catch {
                     let fetchError = error as NSError
                     print("Unable to Perform Fetch Request")
@@ -420,6 +620,15 @@ class HomeController: UIViewController, UITextFieldDelegate {
                 
             }
         }
+    }
+    
+    func checkRange(originalPrice: String, currentPrice: String) -> Bool {
+        let doubleOriginal = Double(originalPrice) ?? 0.00
+        let doubleCurrent = Double(currentPrice) ?? 0.00
+        let percentage = (doubleOriginal*10) / 100
+        let difference = doubleOriginal - doubleCurrent
+        
+        return !(difference > percentage || difference < -percentage)
     }
     
     func getVehicleType(params: String) -> Void {
@@ -454,6 +663,42 @@ class HomeController: UIViewController, UITextFieldDelegate {
                 self.alertDialog (heading: "", message: self.constants.errorMessage);
             }
         }
+    }
+    
+    func getVehicleDetails(userDict: [String: String], params: String) -> Void {
+        self.webserviceManager.getCompanyDetails(userInfoDict: userDict, endPoint: params) { (result) in
+            switch result {
+            case .Success(let data):
+                self.sharedInstance.clearCompanyDetails()
+                self.sharedInstance.saveInCompanyDetailsWith(array: [data])
+                self.load()
+                LoadingIndicatorView.hideInMain()
+                let idv = self.getIDV()
+                self.originalPrice = idv
+                self.price.text = self.originalPrice
+            case .Error(let message):
+                LoadingIndicatorView.hideInMain()
+                self.alertDialog (heading: "", message: message);
+            default:
+                LoadingIndicatorView.hideInMain()
+                self.alertDialog (heading: "", message: self.constants.errorMessage);
+            }
+        }
+    }
+    
+    func getIDV() -> String {
+        let predicate = NSPredicate(format: "productType == %@", "COMPRH")
+        self.companyController.fetchRequest.predicate = predicate
+        do {
+            try self.companyController.performFetch()
+        } catch {
+            let fetchError = error as NSError
+            print("Unable to Perform Fetch Request")
+            print("\(fetchError), \(fetchError.localizedDescription)")
+        }
+        let companyDetails = companyController.fetchedObjects
+        let idv = (companyDetails?.first?.idv) ?? ""
+        return idv
     }
     
     func showActivityIndicator(view: UIView, targetVC: UIViewController) {
@@ -503,6 +748,7 @@ class HomeController: UIViewController, UITextFieldDelegate {
         self.modelTable.reloadData()
         
     }
+    
     public func notification () {
         OperationQueue.main.addOperation {
             let vc = NotificationController()
@@ -546,7 +792,7 @@ extension HomeController : UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if tableView == self.usageTable {
-            self.usageTable.isHidden = !self.usageTable.isHidden
+            self.usageView.isHidden = !self.usageView.isHidden
             self.usage.imageEdgeInsets = UIEdgeInsets(top: 0, left: 129, bottom: 0, right: 5)
             let usage = usageController.object(at: indexPath)
             self.usageId = usage.usageID ?? ""
@@ -556,15 +802,19 @@ extension HomeController : UITableViewDelegate {
             self.getVehicleType(params: "\(constants.VEHICLE_TYPE)\(self.usageId)")
             self.type.imageEdgeInsets = UIEdgeInsets(top: 0, left: 129, bottom: 0, right: 5)
             self.type.setTitle("Select Type", for: .normal)
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
         } else if tableView == self.typeTable{
-            self.typeTable.isHidden = !self.typeTable.isHidden
+            self.typeView.isHidden = !self.typeView.isHidden
             self.type.imageEdgeInsets = UIEdgeInsets(top: 0, left: 129, bottom: 0, right: 5)
             let type = typeController.object(at: indexPath)
             typeName = type.typeName ?? ""
             self.typeID = type.typeID ?? ""
             self.type.setTitle(typeName, for: .normal)
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
         } else if tableView == self.makeTable{
-            self.makeTable.isHidden = !self.makeTable.isHidden
+            self.makeView.isHidden = !self.makeView.isHidden
             self.make.imageEdgeInsets = UIEdgeInsets(top: 0, left: 129, bottom: 0, right: 5)
             let make = makeController.object(at: indexPath)
             makeName = make.makeName ?? ""
@@ -575,8 +825,10 @@ extension HomeController : UITableViewDelegate {
             self.model.setTitle("Select Model", for: .normal)
             self.variant.imageEdgeInsets = UIEdgeInsets(top: 0, left: 300, bottom: 0, right: 5)
             self.variant.setTitle("Select Variant", for: .normal)
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
         } else if tableView == self.modelTable{
-            self.modelTable.isHidden = !self.modelTable.isHidden
+            self.modelView.isHidden = !self.modelView.isHidden
             self.model.imageEdgeInsets = UIEdgeInsets(top: 0, left: 129, bottom: 0, right: 5)
             let model = modelController.object(at: indexPath)
             modelName = model.modelName ?? ""
@@ -586,27 +838,61 @@ extension HomeController : UITableViewDelegate {
             self.getVehicleVariant(params: "\(constants.VEHICLE_VARIANT)\(self.makeID)\("/")\(self.modelID)")
             self.variant.imageEdgeInsets = UIEdgeInsets(top: 0, left: 300, bottom: 0, right: 5)
             self.variant.setTitle("Select Variant", for: .normal)
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
         } else if tableView == self.variantTable{
-            self.variantTable.isHidden = !self.variantTable.isHidden
-            self.variant.imageEdgeInsets = UIEdgeInsets(top: 0, left: 300, bottom: 0, right: 5)
+            self.variantView.isHidden = !self.variantView.isHidden
             let variant = variantController.object(at: indexPath)
             variantName = variant.variantName ?? ""
+            if (variantName.length > 7) {
+                self.variant.imageEdgeInsets = UIEdgeInsets(top: 0, left: 300, bottom: 0, right: 5)
+            } else {
+                self.variant.imageEdgeInsets = UIEdgeInsets(top: 0, left: 335, bottom: 0, right: 5)
+            }
             self.variantID = variant.variantID ?? ""
             self.variant.setTitle(variantName, for: .normal)
-            self.price.text = variant.price ?? ""
+//            self.price.text = variant.price ?? ""
+            self.originalPrice = variant.price ?? ""
+            self.vehicleOriginalPrice = variant.price ?? ""
+            let startYear = Int(variant.startYear ?? "") ?? 0
+            let endYear = Int(variant.endYear ?? "") ?? 0
+            
+            if (startYear != 0 && endYear != 0 ) {
+                yomList.removeAll()
+                var year = 0
+                let noOfYear = (endYear - startYear) + 1
+                for var i in (0..<noOfYear).reversed()
+                {
+                    if (i == noOfYear-1) {
+                        year = endYear
+                        yomList.append("\(year)")
+                    } else {
+                        year = year - 1
+                        yomList.append("\(year)")
+                    }
+                }
+                self.yomTable.reloadData()
+            }
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
+            
         } else if tableView == self.rtoTable{
-            self.rtoTable.isHidden = !self.rtoTable.isHidden
+            self.rtoView.isHidden = !self.rtoView.isHidden
             self.rto.imageEdgeInsets = UIEdgeInsets(top: 0, left: 300, bottom: 0, right: 5)
             let rto = rtoController.object(at: indexPath)
             rtoName = rto.rtoName ?? ""
             self.rtoID = rto.rtoID ?? ""
             self.rto.setTitle(rtoName, for: .normal)
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
         } else if tableView == self.yomTable{
-            self.yomTable.isHidden = !self.yomTable.isHidden
+            self.yomView.isHidden = !self.yomView.isHidden
             self.yom.imageEdgeInsets = UIEdgeInsets(top: 0, left: 129, bottom: 0, right: 5)
             let yom = yomList[indexPath.row]
             self.year = yom
             self.yom.setTitle(yom, for: .normal)
+            self.insuranceStartDate.setTitle("                ", for: .normal)
+            self.price.text = ""
         }
     }
     
@@ -689,8 +975,8 @@ extension HomeController : UITableViewDataSource {
             let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as! Variant
             let variant = variantController.object(at: indexPath)
             let variantName = variant.variantName ?? ""
-            let numCycle = variant.numCycle ?? ""
-            cell.variant?.text = "\(variantName)\(" ( ")\(numCycle)\(" ) ")"
+            let attribute = variant.attribute ?? ""
+            cell.variant?.text = "\(variantName)\(" ( ")\(attribute)\(" ) ")"
             cell.selectionStyle = .none
             return cell
         } else if tableView == self.rtoTable{

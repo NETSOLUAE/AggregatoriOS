@@ -35,23 +35,25 @@ class ThankYouController: UIViewController {
     }
     
     @IBAction func buttonGoBack(_ sender: Any) {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let mainViewController = storyboard.instantiateViewController(withIdentifier: "HomeController") as! HomeController
-        let leftMenuController = storyboard.instantiateViewController(withIdentifier: "LeftMenuController") as! LeftMenuController
-        let navigationController = storyboard.instantiateViewController(withIdentifier: "navigationController") as! UINavigationController
+//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+//        let mainViewController = storyboard.instantiateViewController(withIdentifier: "HomeController") as! HomeController
+//        let leftMenuController = storyboard.instantiateViewController(withIdentifier: "LeftMenuController") as! LeftMenuController
+//        let navigationController = storyboard.instantiateViewController(withIdentifier: "navigationController") as! UINavigationController
+//
+//        leftMenuController.mainViewController = mainViewController
+//        SlideMenuOptions.contentViewScale = 1
+//        SlideMenuOptions.hideStatusBar = false;
+//
+//        let slideMenuController = ExSlideMenuController(mainViewController:navigationController, leftMenuViewController: leftMenuController)
+//        slideMenuController.automaticallyAdjustsScrollViewInsets = true
+//        slideMenuController.delegate = mainViewController
+//
+//        let appDelegate = UIApplication.shared.delegate
+//        appDelegate?.window??.rootViewController = slideMenuController
+//        appDelegate?.window??.makeKeyAndVisible()
+//        self.present(navigationController, animated: true, completion: nil)
         
-        leftMenuController.mainViewController = mainViewController
-        SlideMenuOptions.contentViewScale = 1
-        SlideMenuOptions.hideStatusBar = false;
-        
-        let slideMenuController = ExSlideMenuController(mainViewController:navigationController, leftMenuViewController: leftMenuController)
-        slideMenuController.automaticallyAdjustsScrollViewInsets = true
-        slideMenuController.delegate = mainViewController
-        
-        let appDelegate = UIApplication.shared.delegate
-        appDelegate?.window??.rootViewController = slideMenuController
-        appDelegate?.window??.makeKeyAndVisible()
-        self.present(navigationController, animated: true, completion: nil)
+        self.navigationController?.popToRootViewController(animated: true)
     }
     
     @IBAction func buttonRate(_ sender: Any) {

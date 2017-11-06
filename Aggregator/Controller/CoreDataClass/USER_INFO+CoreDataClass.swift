@@ -2,8 +2,9 @@
 //  USER_INFO+CoreDataClass.swift
 //  Aggregator
 //
-//  Created by Mac Mini on 9/9/17.
+//  Created by Mac Mini on 10/21/17.
 //  Copyright © 2017 Netsol. All rights reserved.
+//
 //
 
 import Foundation

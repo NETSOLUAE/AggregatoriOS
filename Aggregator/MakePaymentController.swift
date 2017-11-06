@@ -54,7 +54,7 @@ class MakePaymentController: UIViewController, UITextFieldDelegate {
         name.leftViewMode = UITextFieldViewMode.always
         
         self.title = "Make Payment"
-        totalAmount.text = currentCompanySelected.totalPremium
+        totalAmount.text = "\(currentCompanySelected.totalPremium)\(" OMR")"
         self.addDoneButtonOnKeyboard()
         cardNumber.delegate = self
         expiry.delegate = self
@@ -78,6 +78,7 @@ class MakePaymentController: UIViewController, UITextFieldDelegate {
     }
     
     @IBAction func buttonContinue(_ sender: Any) {
+        self.view.endEditing(true)
         let dateFormatterGet = DateFormatter()
         dateFormatterGet.dateFormat = "MM/yyyy"
         let someDate = expiry.text
@@ -130,14 +131,18 @@ class MakePaymentController: UIViewController, UITextFieldDelegate {
                          "national_id" : currentSelection.nationalID,
                          "email" : currentSelection.email,
                          "status" : "Complete",
-                         "company_id" : "0",
+                         "company_id" : currentCompanySelected.companyProductID,
                          "vehicle_usage" : currentSelection.usageName,
                          "usage_type" : currentSelection.typeName,
                          "make" : currentSelection.makeName,
                          "modal" : currentSelection.modelName,
                          "variant" : currentSelection.variantName,
                          "rto" : currentSelection.rtoName,
-                         "registration_date" : currentSelection.date,
+                         "registration_date" : currentSelection.vehicleRegDate,
+                         "policy_start_date" : currentCompanySelected.policyStart,
+                         "policy_end_date" : currentCompanySelected.policyEnd,
+                         "vehicle_age" : currentCompanySelected.vehicleAge,
+                         "premiume_amount" : currentCompanySelected.totalPremium,
                          "price" : currentSelection.price]
                     
                     var params = "\(constants.BASE_URL)\("saveUser&")"

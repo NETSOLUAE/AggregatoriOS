@@ -17,22 +17,32 @@ struct currentSelection {
     static var modelName = String();
     static var variantName = String();
     static var rtoName = String();
+    static var usageId = String();
+    static var typeID = String();
+    static var makeID = String();
+    static var modelID = String();
+    static var variantID = String();
+    static var rtoID = String();
     static var yom = String();
-    static var date = String();
+    static var vehicleRegDate = String();
+    static var insuranceStartDate = String();
     static var price = String();
     static var name = String();
     static var age = String();
     static var mobileNumber = String();
     static var nationalID = String();
     static var email = String();
+    static var employer = String();
     static var Policy = String();
 }
 
 struct currentCompanySelected {
+    static var companyProductID = String();
     static var companyName = String();
     static var totalPremium = String();
     static var policyStart = String();
     static var policyEnd = String();
+    static var vehicleAge = String();
 }
 
 class AboutController: UIViewController, UITextFieldDelegate {
@@ -52,16 +62,20 @@ class AboutController: UIViewController, UITextFieldDelegate {
     var selectedrtoName = ""
     var selectedyom = ""
     
-    var selecteddate = ""
+    var selectedVehicleRegDate = ""
+    var selectedPolicyStartDate = ""
     var selectedprice = ""
     var selectedname = ""
     var selectedage = ""
     var selectedmobileNumber = ""
     var selectednationalID = ""
     var selectedemail = ""
+    var selectedemployer = ""
     var selectedPolicy = ""
     var checkBoxSelected = false
+    var activeField: UITextField?
     let constants = Constants()
+    var employerList = [String]()
     let webserviceManager = WebserviceManager()
     let sharedInstance = CoreDataManager.sharedInstance;
     let managedContext = CoreDataManager.sharedInstance.persistentContainer.viewContext
@@ -80,7 +94,16 @@ class AboutController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var nationalId: UITextField!
     @IBOutlet weak var email: UITextField!
     @IBOutlet weak var terms: UIButton!
+    @IBOutlet weak var scrollView: UIScrollView!
+    @IBOutlet weak var employerTable: UITableView!
+    @IBOutlet weak var employer: UIButton!
+    @IBAction func selectEmployer(_ sender: Any) {
+        self.employerTable.isHidden = !self.employerTable.isHidden
+    }
     @IBAction func done(_ sender: Any) {
+        self.view.endEditing(true)
+        deregisterFromKeyboardNotifications()
+        self.employerTable.isHidden = true
         selectedname = self.firstName.text ?? ""
         selectedage = self.age.text ?? ""
         selectedmobileNumber = self.mobileNo.text ?? ""
@@ -98,67 +121,14 @@ class AboutController: UIViewController, UITextFieldDelegate {
             self.alertDialog (heading: "", message: "Please enter valid Email address");
         } else if !checkBoxSelected{
             self.alertDialog (heading: "", message: "Please agree to the Terms and Condition");
-        } else{
-            LoadingIndicatorView.show("Getting Quotes..")
-            var userId = "0"
-            var results : [USER_INFO]
-            let studentUniversityFetchRequest: NSFetchRequest<USER_INFO>  = USER_INFO.fetchRequest()
-            let predicate = NSPredicate(format: "nationalID == %@", selectednationalID)
-            self.userInfoController.fetchRequest.predicate = predicate
-            studentUniversityFetchRequest.returnsObjectsAsFaults = false
-            do {
-                results = try self.managedContext.fetch(studentUniversityFetchRequest)
-                if (results.count > 0 ) {
-                    userId = results.first!.id ?? "0"
-                }
-            } catch {
-                let fetchError = error as NSError
-                print("Unable to Perform Fetch Request")
-                print("\(fetchError), \(fetchError.localizedDescription)")
-            }
-            
-           let userInfoDict: [String: String] =
-            ["id" : userId,
-             "full_name" : selectedname,
-             "age" : selectedage,
-             "mobile_no" : selectedmobileNumber,
-             "national_id" : selectednationalID,
-             "email" : selectedemail,
-             "status" : "Incomplete",
-             "company_id" : "0",
-             "vehicle_usage" : selectedusageId,
-             "usage_type" : selectedtypeID,
-             "make" : selectedmakeID,
-             "modal" : selectedmodelID,
-             "variant" : selectedvariantID,
-             "rto" : selectedrtoID,
-             "year_of_manufacture" : selectedyom,
-             "registration_date" : selecteddate,
-             "price" : selectedprice]
-            
-            var params = "\(constants.BASE_URL)\("saveUser&")"
-            for (key, value) in userInfoDict {
-                params = params + "\(key)\("=")\(value)\("&")"
-//                print("\(key): \(value)")
-            }
-            currentSelection.name = selectedname
-            currentSelection.age = selectedage
-            currentSelection.mobileNumber = selectedmobileNumber
-            currentSelection.nationalID = selectednationalID
-            currentSelection.email = selectedemail
-            currentSelection.usageName = selectedusageName
-            currentSelection.typeName = selectedtypeName
-            currentSelection.makeName = selectedmakeName
-            currentSelection.modelName = selectedmodelName
-            currentSelection.variantName = selectedvariantName
-            currentSelection.rtoName = selectedrtoName
-            currentSelection.yom = selectedyom
-            currentSelection.date = selecteddate
-            currentSelection.price = selectedprice
-            currentSelection.Policy = selectedPolicy
-            
-            let encodedHost = NSString(format: params as NSString).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-            sendUserInfo(userDict: userInfoDict, params: encodedHost)
+        } else if (selectedage.length > 2){
+            self.alertDialog (heading: "", message: "Please Enter Valid Age.");
+        } else if (selectedemployer == "Select Employer" || selectedemployer == ""){
+            self.alertDialog (heading: "", message: "Please Select Employer.");
+        } else if (selectedemployer != "Other/None"){
+            self.alertDialogCall ()
+        } else {
+            self.sendUser()
         }
     }
     @IBAction func checkBoxPressed(_ sender: Any) {
@@ -200,10 +170,23 @@ class AboutController: UIViewController, UITextFieldDelegate {
         email.leftViewMode = UITextFieldViewMode.always
         
         let attributedString = NSMutableAttributedString(string: "968")
-        attributedString.addAttribute(NSForegroundColorAttributeName, value: UIColor.lightGray, range: NSMakeRange(0,3))
+        attributedString.addAttribute(NSForegroundColorAttributeName, value: UIColor.black, range: NSMakeRange(0,3))
         mobileNo.attributedText = attributedString
         
+        self.employer.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
+        self.employerTable.isHidden = true
+        employerList.append("Select Employer")
+        employerList.append("Al Mamary");
+        employerList.append("ISS");
+        employerList.append("MOD");
+        employerList.append("Muscat Pharmacy");
+        employerList.append("Private and Trade");
+        employerList.append("ROP");
+        employerList.append("Royal Office");
+        employerList.append("Other/None");
+        
         addDoneButtonOnKeyboard()
+        registerForKeyboardNotifications()
         // Do any additional setup after loading the view, typically from a nib.
     }
     
@@ -213,11 +196,45 @@ class AboutController: UIViewController, UITextFieldDelegate {
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        self.firstName.text = currentSelection.name
+        self.age.text = currentSelection.age
+        let mobile = currentSelection.mobileNumber
+        self.nationalId.text = currentSelection.nationalID
+        self.email.text = currentSelection.email
+        if (self.selectedemployer == "") {
+            self.selectedemployer = "Select Employer"
+        }
+        self.employer.setTitle(self.selectedemployer, for: .normal)
+        
+        if (mobile == "") {
+            let attributedString = NSMutableAttributedString(string: "968")
+            attributedString.addAttribute(NSForegroundColorAttributeName, value: UIColor.black, range: NSMakeRange(0,3))
+            mobileNo.attributedText = attributedString
+        } else {
+            let attributedString = NSMutableAttributedString(string: currentSelection.mobileNumber)
+            attributedString.addAttribute(NSForegroundColorAttributeName, value: UIColor.black, range: NSMakeRange(0,3))
+            mobileNo.attributedText = attributedString
+        }
         
         self.slideMenuController()?.removeLeftGestures()
         self.slideMenuController()?.addLeftGestures()
         
         super.viewWillAppear(animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        selectedname = self.firstName.text ?? ""
+        selectedage = self.age.text ?? ""
+        selectedmobileNumber = self.mobileNo.text ?? ""
+        selectednationalID = self.nationalId.text ?? ""
+        selectedemail = self.email.text ?? ""
+        
+        currentSelection.name = selectedname
+        currentSelection.age = selectedage
+        currentSelection.mobileNumber = selectedmobileNumber
+        currentSelection.nationalID = selectednationalID
+        currentSelection.email = selectedemail
+        deregisterFromKeyboardNotifications()
     }
     
     override func awakeFromNib() {
@@ -232,6 +249,49 @@ class AboutController: UIViewController, UITextFieldDelegate {
             self.view.endEditing(true)
         }
         return true
+    }
+    
+    func registerForKeyboardNotifications(){
+        //Adding notifies on keyboard appearing
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWasShown(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillBeHidden(notification:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+    
+    func deregisterFromKeyboardNotifications(){
+        //Removing notifies on keyboard appearing
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+    
+    func keyboardWasShown(notification: NSNotification){
+        //Need to calculate keyboard exact size due to Apple suggestions
+        self.scrollView.isScrollEnabled = true
+        var info = notification.userInfo!
+        let keyboardSize = (info[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue.size
+        let contentInsets : UIEdgeInsets = UIEdgeInsetsMake(0.0, 0.0, keyboardSize!.height*1.8, 0.0)
+        
+        self.scrollView.contentInset = contentInsets
+        self.scrollView.scrollIndicatorInsets = contentInsets
+        
+        var aRect : CGRect = self.view.frame
+        aRect.size.height -= keyboardSize!.height
+        if let activeField = self.activeField {
+            if (!aRect.contains(activeField.frame.origin)){
+                self.scrollView.scrollRectToVisible(activeField.frame, animated: true)
+            }
+        }
+    }
+    
+    func keyboardWillBeHidden(notification: NSNotification){
+        //Once keyboard disappears, restore original positions
+        var info = notification.userInfo!
+        let keyboardSize = (info[UIKeyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue.size
+        let contentInsets : UIEdgeInsets = UIEdgeInsetsMake(0.0, 0.0, -keyboardSize!.height, 0.0)
+        self.scrollView.contentInset = contentInsets
+        self.scrollView.scrollIndicatorInsets = contentInsets
+        self.view.endEditing(true)
+        self.scrollView.contentInset.bottom = keyboardSize!.height
+        //        self.scrollView.isScrollEnabled = false
     }
     
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
@@ -255,6 +315,157 @@ class AboutController: UIViewController, UITextFieldDelegate {
         return true
     }
     
+    func sendUser() -> Void {
+        LoadingIndicatorView.show("Getting Quotes..")
+        var userId = "0"
+        var results : [USER_INFO]
+        let studentUniversityFetchRequest: NSFetchRequest<USER_INFO>  = USER_INFO.fetchRequest()
+        let predicate = NSPredicate(format: "nationalID == %@", selectednationalID)
+        self.userInfoController.fetchRequest.predicate = predicate
+        studentUniversityFetchRequest.returnsObjectsAsFaults = false
+        do {
+            results = try self.managedContext.fetch(studentUniversityFetchRequest)
+            if (results.count > 0 ) {
+                userId = results.first!.id ?? "0"
+            }
+        } catch {
+            let fetchError = error as NSError
+            print("Unable to Perform Fetch Request")
+            print("\(fetchError), \(fetchError.localizedDescription)")
+        }
+        currentSelection.name = selectedname
+        currentSelection.age = selectedage
+        currentSelection.mobileNumber = selectedmobileNumber
+        currentSelection.nationalID = selectednationalID
+        currentSelection.email = selectedemail
+        currentSelection.employer = selectedemployer
+        currentSelection.usageName = selectedusageName
+        currentSelection.typeName = selectedtypeName
+        currentSelection.makeName = selectedmakeName
+        currentSelection.modelName = selectedmodelName
+        currentSelection.variantName = selectedvariantName
+        currentSelection.rtoName = selectedrtoName
+        currentSelection.usageId = selectedusageId
+        currentSelection.typeID = selectedtypeID
+        currentSelection.makeID = selectedmakeID
+        currentSelection.modelID = selectedmodelID
+        currentSelection.variantID = selectedvariantID
+        currentSelection.rtoID = selectedrtoID
+        currentSelection.yom = selectedyom
+        currentSelection.vehicleRegDate = selectedVehicleRegDate
+        currentSelection.insuranceStartDate = selectedPolicyStartDate
+        currentSelection.price = selectedprice
+        currentSelection.Policy = selectedPolicy
+        
+        let startPolicy = currentSelection.insuranceStartDate
+        currentCompanySelected.policyStart = startPolicy
+        
+        let currentDate = startPolicy.substring(to: startPolicy.index(startPolicy.startIndex, offsetBy: 2))
+        
+        let start = startPolicy.index(startPolicy.startIndex, offsetBy: 3)
+        let end = startPolicy.index(startPolicy.endIndex, offsetBy: -5)
+        let range = start..<end
+        
+        let currentMonth = startPolicy.substring(with: range)
+        
+        let index = startPolicy.index(startPolicy.startIndex, offsetBy: 6)
+        let currentYear = startPolicy.substring(from: index)
+        
+        var previousdate = "\(Int(currentDate)!)"
+        var previousmonth = "\(Int(currentMonth)!)"
+        if (previousdate.length == 1) {
+            previousdate = "\("0")\(previousdate)"
+        }
+        if (previousmonth.length == 1) {
+            previousmonth = "\("0")\(previousmonth)"
+        }
+        
+        var nextYear = ""
+        if (previousdate == "01" && previousmonth == "01") {
+            nextYear = currentYear
+            previousmonth = "\("12")"
+            previousdate = "\("31")"
+        } else if (previousdate == "01") {
+            nextYear = "\(Int(currentYear)!+1)"
+            previousmonth = "\(Int(currentMonth)!-1)"
+            if (previousmonth == "03" || previousmonth == "05" || previousmonth == "07"
+                || previousmonth == "08" || previousmonth == "10" || previousmonth == "12") {
+                previousdate = "\("31")"
+            } else if (previousmonth == "04" || previousmonth == "06" || previousmonth == "09"
+                || previousmonth == "11") {
+                previousdate = "\("30")"
+            } else if (previousmonth == "02") {
+                if Int(nextYear)! % 4 == 0 {
+                    previousdate = "\("29")"
+                    print("\(nextYear) is leap year")
+                } else {
+                    previousdate = "\("28")"
+                    print("\(previousmonth) is normal year")
+                }
+            }
+        } else {
+            nextYear = "\(Int(currentYear)!+1)"
+            previousdate = "\(Int(currentDate)!-1)"
+            previousmonth = currentMonth
+        }
+        
+        if (previousdate.length == 1) {
+            previousdate = "\("0")\(previousdate)"
+        }
+        if (previousmonth.length == 1) {
+            previousmonth = "\("0")\(previousmonth)"
+        }
+        let endYear = "\(previousdate)\("-")\(previousmonth)\("-")\(nextYear)"
+        currentCompanySelected.policyEnd = endYear
+        
+        //Vehicle Age Calculation
+        let date = Date.init(timeIntervalSinceNow: 1)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "dd-MM-yyyy"
+        let strDate = dateFormatter.string(from: date)
+        
+        let vindex = selectedVehicleRegDate.index(selectedVehicleRegDate.startIndex, offsetBy: 6)
+        let vehicleYear = selectedVehicleRegDate.substring(from: vindex)
+        let cindex = strDate.index(strDate.startIndex, offsetBy: 6)
+        let currentyear = strDate.substring(from: cindex)
+        let vehicleAge = Int(currentyear)! - Int(vehicleYear)!
+        currentCompanySelected.vehicleAge = "\(vehicleAge)"
+        
+        let userInfoDict: [String: String] =
+            ["id" : userId,
+             "full_name" : selectedname,
+             "age" : selectedage,
+             "mobile_no" : selectedmobileNumber,
+             "national_id" : selectednationalID,
+             "email" : selectedemail,
+             "employer" : selectedemployer,
+             "status" : "Incomplete",
+             "company_id" : "0",
+             "vehicle_usage" : selectedusageName,
+             "usage_type" : selectedtypeName,
+             "make" : selectedmakeName,
+             "modal" : selectedmodelName,
+             "variant" : selectedvariantName,
+             "rto" : selectedrtoName,
+             "year_of_manufacture" : selectedyom,
+             "registration_date" : selectedVehicleRegDate,
+             "policy_start_date" : currentCompanySelected.policyStart,
+             "policy_end_date" : currentCompanySelected.policyEnd,
+             "vehicle_age" : currentCompanySelected.vehicleAge,
+             "premiume_amount" : "0",
+             "price" : selectedprice]
+        
+        var params = "\(constants.BASE_URL)\("saveUser&")"
+        for (key, value) in userInfoDict {
+            params = params + "\(key)\("=")\(value)\("&")"
+            //                print("\(key): \(value)")
+        }
+        
+        let encodedHost = NSString(format: params as NSString).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        sendUserInfo(userDict: userInfoDict, params: encodedHost)
+        
+    }
+    
     func sendUserInfo(userDict: [String: String], params: String) -> Void {
         self.webserviceManager.login(type: "double", endPoint: params) { (result) in
             switch result {
@@ -273,10 +484,14 @@ class AboutController: UIViewController, UITextFieldDelegate {
                 self.sharedInstance.createUserInfoEntityFrom(dictionary: userDic as [String : AnyObject])
                 self.getVehicleDetails(userDict: userDic, params: self.constants.COMPANY_DETAILS);
             case .Error(let message):
+                LoadingIndicatorView.hideInMain()
                 self.alertDialog (heading: "", message: message);
             default:
+                LoadingIndicatorView.hideInMain()
                 self.alertDialog (heading: "", message: self.constants.errorMessage);
             }
+//            self.selectedemployer = "Select Employeer"
+//            self.employer.setTitle(self.selectedemployer, for: .normal)
         }
     }
     
@@ -294,8 +509,10 @@ class AboutController: UIViewController, UITextFieldDelegate {
                 let compareController = storyboard.instantiateViewController(withIdentifier: "CompareApplyController") as! CompareApplyController
                 self.show(compareController, sender: self)
             case .Error(let message):
+                LoadingIndicatorView.hideInMain()
                 self.alertDialog (heading: "", message: message);
             default:
+                LoadingIndicatorView.hideInMain()
                 self.alertDialog (heading: "", message: self.constants.errorMessage);
             }
         }
@@ -309,6 +526,51 @@ class AboutController: UIViewController, UITextFieldDelegate {
             alertController.addAction(defaultAction)
             
             self.present(alertController, animated: true, completion: nil)
+        }
+    }
+    
+    func alertDialogCall () {
+        let message = "\("RMS negotiated special rates for employees of ")\(selectedemployer)\(" company. Please contact +96824762679 for details. Continue to see off the shelf rates.")"
+        OperationQueue.main.addOperation {
+            let alert = UIAlertController(title: "",
+                                          message: message,
+                                          preferredStyle: .alert)
+            // Change font of the title and message
+//            let titleFont:[String : AnyObject] = [ NSFontAttributeName : UIFont(name: "AmericanTypewriter", size: 18)! ]
+//            let attributedTitle = NSMutableAttributedString(string: "Action", attributes: titleFont)
+//            alert.setValue(attributedTitle, forKey: "attributedTitle")
+            
+            // Continue button
+            let call = UIAlertAction(title: "Call", style: .default, handler: { (action) -> Void in
+                let url:NSURL = NSURL(string: "tel://" + "+96824762679")!
+                if (UIApplication.shared.canOpenURL(url as URL))
+                {
+                    if let urlMobile = NSURL(string: "tel://" + "+96824762679"), UIApplication.shared.canOpenURL(urlMobile as URL) {
+                        if #available(iOS 10.0, *) {
+                            UIApplication.shared.open(urlMobile as URL, options: [:], completionHandler: nil)
+                        }
+                        else {
+                            UIApplication.shared.openURL(urlMobile as URL)
+                        }
+                    }
+                }
+            })
+            
+            // Continue button
+            let cancel = UIAlertAction(title: "Continue", style: .default, handler: { (action) -> Void in
+                self.selectedemployer = "Other/None"
+                self.employer.setTitle(self.selectedemployer, for: .normal)
+                self.sendUser()
+            })
+            
+            // Restyle the view of the Alert
+            //            alert.view.tintColor = UIColor.brown  // change text color of the buttons
+            //            alert.view.backgroundColor = UIColor.cyan  // change background color
+            alert.view.layer.cornerRadius = 25   // change corner radius
+            // Add action buttons and present the Alert
+            alert.addAction(cancel)
+            alert.addAction(call)
+            self.present(alert, animated: true, completion: nil)
         }
     }
     
@@ -351,6 +613,42 @@ class AboutController: UIViewController, UITextFieldDelegate {
             nationalId.resignFirstResponder()
             email.becomeFirstResponder()
         }
+    }
+}
+
+extension AboutController : UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 30
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.employerTable.isHidden = !self.employerTable.isHidden
+        self.employer.imageEdgeInsets = UIEdgeInsets(top: 0, left: 340, bottom: 0, right: 10)
+        let employer = employerList[indexPath.row]
+        self.selectedemployer = employer
+        self.employer.setTitle(selectedemployer, for: .normal)
+    }
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    }
+    
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return 1
+    }
+}
+
+extension AboutController : UITableViewDataSource {
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return employerList.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "employercell", for: indexPath) as! Employer
+        let employer = employerList[indexPath.row]
+        cell.employer?.text = employer
+        cell.selectionStyle = .none
+        return cell
     }
 }
 

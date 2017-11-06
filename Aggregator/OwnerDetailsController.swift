@@ -112,6 +112,7 @@ class OwnerDetailsController: UIViewController, UITextViewDelegate {
         self.navigationController?.navigationBar.shadowImage = UIImage()
     }
     @IBAction func buttonContinue(_ sender: Any) {
+        self.view.endEditing(true)
         
         if (self.address.text != "") {
             currentAddress.address = self.address.text

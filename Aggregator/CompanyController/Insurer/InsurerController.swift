@@ -18,6 +18,7 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
     var selectedCompanyDetails = [COMPANY_DETAILS]()
     var isAllQuotes = true
     var tagValue = 0
+    var selectedPolicyType = ""
     var itemInfo: IndicatorInfo = IndicatorInfo(title: "Insurers")
     let constants = Constants()
     let webserviceManager = WebserviceManager();
@@ -35,9 +36,16 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
         return fetchedResultsController
     }()
     lazy var companyController: NSFetchedResultsController<COMPANY_DETAILS> = {
+        
+        if (currentSelection.Policy == "Motor Comprehensive") {
+            self.selectedPolicyType = "COMPRH"
+        } else {
+            self.selectedPolicyType = "TP"
+        }
+        let predicate = NSPredicate(format: "productType == %@", self.selectedPolicyType)
         let fetchRequest: NSFetchRequest<COMPANY_DETAILS> = COMPANY_DETAILS.fetchRequest()
-//        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "insurerName", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))]
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "totalPremium", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))]
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "premiumAmount", ascending: true, selector: #selector(NSString.localizedStandardCompare(_:)))]
+        fetchRequest.predicate = predicate
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.managedContext, sectionNameKeyPath: nil, cacheName: nil)
         fetchedResultsController.delegate = self
         return fetchedResultsController
@@ -58,7 +66,9 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
     @IBOutlet weak var allQuotes: UIButton!
     @IBOutlet weak var lowest5: UIButton!
     @IBOutlet weak var detailPrevious: UIButton!
+    @IBOutlet weak var detailsPreviousImageView: UIImageView!
     @IBOutlet weak var detailNext: UIButton!
+    @IBOutlet weak var detailNextImageView: UIImageView!
     @IBOutlet weak var coverView: UIView!
     @IBOutlet weak var coverTable: UITableView!
     @IBOutlet weak var companyTable: UITableView!
@@ -82,13 +92,19 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
             detailView.isHidden = false
             if (tagValue == 0) {
                 self.detailPrevious.isHidden = true
+                self.detailsPreviousImageView.isHidden = true
                 self.detailNext.isHidden = false
+                self.detailNextImageView.isHidden = false
             } else if (tagValue == size-1) {
                 self.detailNext.isHidden = true
+                self.detailNextImageView.isHidden = true
                 self.detailPrevious.isHidden = false
+                self.detailsPreviousImageView.isHidden = false
             } else {
                 self.detailNext.isHidden = false
+                self.detailNextImageView.isHidden = false
                 self.detailPrevious.isHidden = false
+                self.detailsPreviousImageView.isHidden = false
             }
             self.detailPremium.text = company.totalPremium
             self.detailHeading.text = company.insurerName
@@ -118,13 +134,19 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
             detailView.isHidden = false
             if (tagValue == 0) {
                 self.detailPrevious.isHidden = true
+                self.detailsPreviousImageView.isHidden = true
                 self.detailNext.isHidden = false
+                self.detailNextImageView.isHidden = false
             } else if (tagValue == size-1) {
                 self.detailNext.isHidden = true
+                self.detailNextImageView.isHidden = true
                 self.detailPrevious.isHidden = false
+                self.detailsPreviousImageView.isHidden = false
             } else {
                 self.detailNext.isHidden = false
+                self.detailNextImageView.isHidden = false
                 self.detailPrevious.isHidden = false
+                self.detailsPreviousImageView.isHidden = false
             }
             self.detailPremium.text = company.totalPremium
             self.detailHeading.text = company.insurerName
@@ -159,35 +181,8 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
         }
         
         currentCompanySelected.companyName = company.insurerName!
+        currentCompanySelected.companyProductID = company.productID!
         currentCompanySelected.totalPremium = company.totalPremium!
-        
-        let date = Date.init(timeIntervalSinceNow: 1)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "dd-MM-yyyy"
-        let startPolicy = dateFormatter.string(from: date)
-        currentCompanySelected.policyStart = startPolicy
-        
-        let currentDate = startPolicy.substring(to: startPolicy.index(startPolicy.startIndex, offsetBy: 2))
-        
-        let start = startPolicy.index(startPolicy.startIndex, offsetBy: 3)
-        let end = startPolicy.index(startPolicy.endIndex, offsetBy: -5)
-        let range = start..<end
-        
-        let currentMonth = startPolicy.substring(with: range)
-        
-        let index = startPolicy.index(startPolicy.startIndex, offsetBy: 6)
-        let currentYear = startPolicy.substring(from: index)
-        var previousdate = "\(Int(currentDate)!-1)"
-        var previousmonth = "\(Int(currentMonth)!)"
-        if (previousdate.length == 1) {
-            previousdate = "\("0")\(previousdate)"
-        }
-        if (previousmonth.length == 1) {
-            previousmonth = "\("0")\(previousmonth)"
-        }
-        let endYear = "\(previousdate)\("-")\(previousmonth)\("-")\((Int(currentYear)!+1))"
-        currentCompanySelected.policyEnd = endYear
-        
         
         let userId = getUserId(nationalID: currentSelection.nationalID)
         var params = ""
@@ -210,6 +205,7 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
         detailView.isHidden = true
     }
     @IBAction func allQuotesSelected(_ sender: Any) {
+        currentSelection.Policy = "Motor Comprehensive"
         allQuotes.setBackgroundImage(UIImage(named: "radio-selected.png"), for: UIControlState.normal)
         lowest5.setBackgroundImage(UIImage(named: "radio.png"), for: UIControlState.normal)
         if (!isAllQuotes) {
@@ -217,11 +213,20 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
             self.selectedCompanyDetails.removeAll()
             self.selectedCompanyProductID.removeAll()
             self.selectedCovers.removeAll()
-            self.coverTable.reloadData()
+            let coverCount = coverController.fetchedObjects?.count ?? 0
+            if (coverCount > 0 ) {
+                self.coverTable.reloadData()
+            }
         }
-        self.companyTable.reloadData()
+        getCompanySelection(insuranceType: "COMPRH")
+        let companyCount = companyController.fetchedObjects?.count ?? 0
+        if (companyCount > 0 ) {
+            self.companyTable.isHidden = false
+            self.companyTable.reloadData()
+        }
     }
     @IBAction func lowest5Selected(_ sender: Any) {
+        currentSelection.Policy = "Motor Third Party"
         allQuotes.setBackgroundImage(UIImage(named: "radio.png"), for: UIControlState.normal)
         lowest5.setBackgroundImage(UIImage(named: "radio-selected.png"), for: UIControlState.normal)
         if (isAllQuotes) {
@@ -229,22 +234,40 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
             self.selectedCompanyDetails.removeAll()
             self.selectedCompanyProductID.removeAll()
             self.selectedCovers.removeAll()
-            self.coverTable.reloadData()
+            let coverCount = coverController.fetchedObjects?.count ?? 0
+            if (coverCount > 0 ) {
+                self.coverTable.reloadData()
+            }
         }
-        self.companyTable.reloadData()
+        getCompanySelection(insuranceType: "TP")
+        let companyCount = companyController.fetchedObjects?.count ?? 0
+        if (companyCount > 0 ) {
+            self.companyTable.isHidden = false
+            self.companyTable.reloadData()
+        }
     }
     @IBAction func done(_ sender: Any) {
         coverView.isHidden = !coverView.isHidden
     }
     @IBAction func compare(_ sender: Any) {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let compareController = storyboard.instantiateViewController(withIdentifier: "CompareViewController") as! CompareViewController
-        compareController.selectedCompanyProductID = selectedCompanyProductID
-        self.show(compareController, sender: self)
+        if (selectedCompanyProductID.count > 1) {
+            load()
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            let compareController = storyboard.instantiateViewController(withIdentifier: "CompareViewController") as! CompareViewController
+            compareController.selectedCompanyProductID = selectedCompanyProductID
+            if (selectedCovers.count > 0) {
+                compareController.coverSelected = true
+                compareController.checkedCovers = selectedCovers
+            } else {
+                compareController.coverSelected = false
+            }
+            self.show(compareController, sender: self)
+        } else {
+            self.alertDialog(heading: "Alert", message: "Please select more than 1 company to compare")
+        }
     }
     override func viewDidLoad() {
         super.viewDidLoad()
-//        self.coverTable.register(CoverTable.self, forCellReuseIdentifier: "Cell")
         self.coverButton.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
         coverView.isHidden = true
         detailView.isHidden = true
@@ -269,6 +292,14 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
         }
         
         uniqueCovers = Array(Set(coverName))
+        
+        if (currentSelection.Policy == "Motor Comprehensive") {
+            allQuotes.setBackgroundImage(UIImage(named: "radio-selected.png"), for: UIControlState.normal)
+            lowest5.setBackgroundImage(UIImage(named: "radio.png"), for: UIControlState.normal)
+        } else {
+            allQuotes.setBackgroundImage(UIImage(named: "radio.png"), for: UIControlState.normal)
+            lowest5.setBackgroundImage(UIImage(named: "radio-selected.png"), for: UIControlState.normal)
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -295,6 +326,18 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
                 }
                 
             }
+        }
+    }
+    
+    func getCompanySelection(insuranceType: String) {
+        let predicate = NSPredicate(format: "productType == %@", insuranceType)
+        self.companyController.fetchRequest.predicate = predicate
+        do {
+            try self.companyController.performFetch()
+        } catch {
+            let fetchError = error as NSError
+            print("Unable to Perform Fetch Request")
+            print("\(fetchError), \(fetchError.localizedDescription)")
         }
     }
     
@@ -325,6 +368,47 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
         return id
     }
     
+    func getCoverIdByCoverName(coverName: String) -> String {
+        let predicate = NSPredicate(format: "coverName == %@", coverName)
+        self.coverController.fetchRequest.predicate = predicate
+        do {
+            try self.coverController.performFetch()
+        } catch {
+            let fetchError = error as NSError
+            print("Unable to Perform Fetch Request")
+            print("\(fetchError), \(fetchError.localizedDescription)")
+        }
+        let coverInfo = coverController.fetchedObjects
+        let coverId = (coverInfo?.first?.coverID) ?? ""
+        return coverId
+    }
+    
+    func saveTotalPremium(productID: String, premiumValue: String) -> Void {
+        let fetchRequest:NSFetchRequest<NSFetchRequestResult> = NSFetchRequest.init(entityName: "COMPANY_DETAILS")
+        let predicate = NSPredicate(format: "productID = '\(productID)'")
+        fetchRequest.predicate = predicate
+        do
+        {
+            let test = try managedContext.fetch(fetchRequest)
+            if test.count == 1
+            {
+                let objectUpdate = test[0] as! NSManagedObject
+                objectUpdate.setValue(premiumValue, forKey: "totalPremium")
+                do{
+                    try managedContext.save()
+                }
+                catch
+                {
+                    print(error)
+                }
+            }
+        }
+        catch
+        {
+            print(error)
+        }
+    }
+    
     func sendPolicyDetails(params: String) -> Void {
         LoadingIndicatorView.hideInMain()
         self.webserviceManager.login(type: "double", endPoint: params) { (result) in
@@ -340,10 +424,17 @@ class InsurerController: UIViewController, IndicatorInfoProvider {
     
     func coveralertDialog (heading: String, message: String) {
         OperationQueue.main.addOperation {
-            
-            let vc = CustomAlert()
-            vc.covers = message
-            self.present(vc, animated: true)
+            if (heading == "Break Up") {
+                let vc = CustomAlertBreakup()
+                vc.covers = message
+                vc.headingText = heading
+                self.present(vc, animated: true)
+            } else {
+                let vc = CustomAlert()
+                vc.covers = message
+                vc.headingText = heading
+                self.present(vc, animated: true)
+            }
         }
     }
     
@@ -391,78 +482,6 @@ extension InsurerController : UITableViewDelegate {
     
     // click cell
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath){
-        if tableView == self.coverTable {
-            allQuotes.setBackgroundImage(UIImage(named: "radio-selected.png"), for: UIControlState.normal)
-            lowest5.setBackgroundImage(UIImage(named: "radio.png"), for: UIControlState.normal)
-            if (!isAllQuotes) {
-                isAllQuotes = !isAllQuotes
-            }
-            let cell = tableView.cellForRow(at: indexPath) as! CoverTable
-            if (selectedCovers.contains(uniqueCovers[indexPath.row])) {
-                cell.checkBox.setBackgroundImage(UIImage(named: "checkbox.png"), for: UIControlState.normal)
-                let removableCoverName = uniqueCovers[indexPath.row]
-                if let index = selectedCovers.index(of: removableCoverName) {
-                    selectedCovers.remove(at: index)
-                }
-                for company in selectedCompanyDetails {
-                    var isExist = false
-                    self.getCoverNames(productID: company.productID!)
-                    let covers = coverController.fetchedObjects
-                    for cover in covers! {
-                        let coverName = cover.coverName
-                        if (selectedCovers.contains(coverName!)) {
-                            isExist = true
-                            break
-                        }
-                    }
-                    if (!isExist) {
-                        for cover in covers! {
-                            let coverName = cover.coverName
-                            if (coverName == removableCoverName) {
-                                let index = selectedCompanyDetails.index(of: company)
-                                selectedCompanyDetails.remove(at: index!)
-                                break
-                            }
-                        }
-                        
-                    }
-                }
-            } else {
-                selectedCovers.append(uniqueCovers[indexPath.row])
-                cell.checkBox.setBackgroundImage(UIImage(named: "checkbox-selected.png"), for: UIControlState.normal)
-                let company = companyController.fetchedObjects
-                for company in company! {
-                    self.getCoverNames(productID: company.productID!)
-                    var companyExist = false
-                    let covers = coverController.fetchedObjects
-                    for cover in covers! {
-                        let coverName = cover.coverName
-                        if (coverName == uniqueCovers[indexPath.row]) {
-                            for selectedCompany in selectedCompanyDetails {
-                                if (selectedCompany.productID == company.productID) {
-                                    companyExist = true
-                                }
-                            }
-                            if (!companyExist) {
-                                selectedCompanyDetails.append(company)
-                            }
-                        }
-                    }
-                }
-            }
-            self.companyTable.reloadData()
-        } else {
-            let cell = tableView.cellForRow(at: indexPath) as! CompanyTable
-            let company = companyController.object(at: indexPath)
-            let productId = company.productID ?? ""
-            if (selectedCompanyProductID.contains(productId)) { 
-                selectedCompanyProductID.remove(at: indexPath.row)
-                cell.checkBoxSelected.setBackgroundImage(UIImage(named: "checkbox.png"), for: UIControlState.normal)
-            } else {
-                selectedCompanyProductID.append(productId)
-                cell.checkBoxSelected.setBackgroundImage(UIImage(named: "checkbox-selected.png"), for: UIControlState.normal)
-            }
-        }
     }
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -479,21 +498,13 @@ extension InsurerController : UITableViewDataSource {
         if tableView == self.coverTable {
             return uniqueCovers.count
         } else {
-            if (isAllQuotes) {
-                if (selectedCompanyDetails.count > 0) {
-                    return selectedCompanyDetails.count
-                } else {
-                    guard let quotes = companyController.fetchedObjects else {
-                        return 0
-                    }
-                    return quotes.count
-                }
+            if (selectedCompanyDetails.count > 0) {
+                return selectedCompanyDetails.count
             } else {
-                if (selectedCompanyDetails.count > 5 || selectedCompanyDetails.count == 0) {
-                    return 5
-                } else {
-                    return selectedCompanyDetails.count
+                guard let quotes = companyController.fetchedObjects else {
+                    return 0
                 }
+                return quotes.count
             }
         }
     }
@@ -503,11 +514,26 @@ extension InsurerController : UITableViewDataSource {
             let cell = tableView.dequeueReusableCell(withIdentifier: "CellCover", for: indexPath) as! CoverTable
             let name = uniqueCovers[indexPath.row]
             cell.name?.text = name
-            if (selectedCovers.contains(name)) {
-                cell.checkBox.setBackgroundImage(UIImage(named: "checkbox-selected.png"), for: UIControlState.normal)
+            cell.checkBox.tag = indexPath.row
+            
+            if (currentSelection.Policy == "Motor Comprehensive" && (name == "Comprehensive Cover" || name == "Third Party Liability")) {
+                cell.checkBox.setBackgroundImage(UIImage(named: "checkbox-disabled.png"), for: UIControlState.normal)
+                if (!selectedCovers.contains("Comprehensive Cover")) {
+                    selectedCovers.append("Comprehensive Cover")
+                }
+                if (!selectedCovers.contains("Third Party Liability")) {
+                    selectedCovers.append("Third Party Liability")
+                }
+                cell.cellDelegate = nil
             } else {
-                cell.checkBox.setBackgroundImage(UIImage(named: "checkbox.png"), for: UIControlState.normal)
+                cell.cellDelegate = self
+                if (selectedCovers.contains(name)) {
+                    cell.checkBox.setBackgroundImage(UIImage(named: "checkbox-selected.png"), for: UIControlState.normal)
+                } else {
+                    cell.checkBox.setBackgroundImage(UIImage(named: "checkbox.png"), for: UIControlState.normal)
+                }
             }
+            
             cell.selectionStyle = .none
             return cell
         } else {
@@ -520,9 +546,15 @@ extension InsurerController : UITableViewDataSource {
             }
             cell.cellDelegate = self
             cell.companyName?.text = company.insurerName
-            cell.premium?.text = company.totalPremium
+            let premiumValue = company.premiumAmount
+            cell.premium?.text = premiumValue
             cell.view.tag = indexPath.row
+            cell.buy.tag = indexPath.row
+            cell.checkBoxSelected.tag = indexPath.row
+            cell.breakUp.tag = indexPath.row
             let productId = company.productID ?? ""
+            let productType = company.productType ?? ""
+            print(productType)
             if (selectedCompanyProductID.contains(productId)) {
                 cell.checkBoxSelected.setBackgroundImage(UIImage(named: "checkbox-selected.png"), for: UIControlState.normal)
             } else {
@@ -530,6 +562,45 @@ extension InsurerController : UITableViewDataSource {
             }
             cell.companyView.layer.borderColor = UIColor(hex:"#e4e4e4", alpha: 1.0).cgColor
             cell.selectionStyle = .none
+            cell.breakUp.isHidden = true
+            
+            let totalPremium = Double(company.totalPremium ?? "") ?? 0.00
+            let premiumDouble = Double(premiumValue ?? "") ?? 0.00
+            
+            if (totalPremium > premiumDouble) {
+                cell.premium?.text = "\(totalPremium)"
+            } else {
+                cell.premium?.text = "\(premiumDouble)"
+            }
+//            if (selectedCovers.count > 0) {
+//                let coverDictionary: NSMutableDictionary = NSMutableDictionary()
+//                let coverPremiumText = company.coverPremium
+//                let coverArray =  coverPremiumText?.components(separatedBy: .newlines)
+//                for cover in coverArray! {
+//                    let key = cover.components(separatedBy: " :")
+//                    if let range = cover.range(of: ": ") {
+//                        let value = cover.substring(from: range.upperBound)
+//                        print(value)
+//                        coverDictionary.setValue(value, forKey: key[0].uppercased())
+//                    }
+//                    print(key)
+//                }
+//
+//                var premiumDouble = Double(premiumValue ?? "") ?? 0.00
+//                for selectedCover in selectedCovers {
+//                    let coverID = self.getCoverIdByCoverName(coverName: selectedCover)
+//                    if (coverID != "OD" && coverID != "TP") {
+//                        let coverAmount = Double(coverDictionary[coverID] as? String ?? "") ?? 0.00
+//                        premiumDouble = premiumDouble + coverAmount;
+//                    }
+//                }
+//                cell.premium?.text = "\(premiumDouble)"
+//
+//                self.saveTotalPremium(productID: company.productID!, premiumValue: "\(premiumDouble)")
+//            } else {
+//                cell.premium?.text = premiumValue ?? ""
+//                self.saveTotalPremium(productID: company.productID!, premiumValue: premiumValue!)
+//            }
             return cell
         }
     }
@@ -552,15 +623,209 @@ extension InsurerController : CompanyDelegate {
         detailView.isHidden = false
         if (tagValue == 0) {
             self.detailPrevious.isHidden = true
+            self.detailsPreviousImageView.isHidden = true
             self.detailNext.isHidden = false
+            self.detailNextImageView.isHidden = false
         } else if (tagValue == size-1) {
             self.detailNext.isHidden = true
+            self.detailNextImageView.isHidden = true
             self.detailPrevious.isHidden = false
+            self.detailsPreviousImageView.isHidden = false
         } else {
             self.detailNext.isHidden = false
+            self.detailNextImageView.isHidden = false
             self.detailPrevious.isHidden = false
+            self.detailsPreviousImageView.isHidden = false
         }
         self.detailPremium.text = company.totalPremium
         self.detailHeading.text = company.insurerName
+    }
+    
+    func didPressBuy(sender: UIButton) {
+        tagValue = sender.tag
+        let indexPath = IndexPath(item: tagValue, section: 0)
+        var company: COMPANY_DETAILS;
+        if (selectedCompanyDetails.count > 0) {
+            company = selectedCompanyDetails[indexPath.row] as COMPANY_DETAILS
+        } else {
+            company = companyController.object(at: indexPath)
+        }
+        print("I have pressed a button with a tag: \(tagValue)")
+        
+        currentCompanySelected.companyName = company.insurerName!
+        currentCompanySelected.companyProductID = company.productID!
+        currentCompanySelected.totalPremium = company.totalPremium!
+        
+        let userId = getUserId(nationalID: currentSelection.nationalID)
+        var params = ""
+        params = params + "\(constants.BASE_URL)\("savePolicy&id=")\(userId)\("&company_id=")\(company.productID ?? "")"
+        getCoverNames(productID: company.productID!)
+        let covers = coverController.fetchedObjects
+        var appendedCover = ""
+        var i = 0
+        for cover in covers! {
+            let coverId = cover.coverID ?? ""
+            let coverName = cover.coverName ?? ""
+            appendedCover = appendedCover + "\("&add_ons[")\(i)\("][add_on_id]=")\(coverId)\("&add_ons[")\(i)\("][title]=")\(coverName)\("&add_ons[")\(i)\("][status]=Yes"))"
+            i = i + 1
+        }
+        params = params + appendedCover
+        let encodedHost = NSString(format: params as NSString).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        self.sendPolicyDetails(params: "\(encodedHost)")
+    }
+    
+    func didPressCheckBox(sender: UIButton) {
+        let tag = sender.tag
+        let indexPath = IndexPath(item: tag, section: 0)
+        let cell = self.companyTable.cellForRow(at: indexPath) as! CompanyTable
+        var company: COMPANY_DETAILS;
+        if (selectedCompanyDetails.count > 0) {
+            company = selectedCompanyDetails[indexPath.row] as COMPANY_DETAILS
+        } else {
+            company = companyController.object(at: indexPath)
+        }
+        let productId = company.productID ?? ""
+        if (selectedCompanyProductID.contains(productId)) {
+            if let index = selectedCompanyProductID.index(of: productId) {
+                selectedCompanyProductID.remove(at: index)
+            }
+            cell.checkBoxSelected.setBackgroundImage(UIImage(named: "checkbox.png"), for: UIControlState.normal)
+        } else {
+            selectedCompanyProductID.append(productId)
+            cell.checkBoxSelected.setBackgroundImage(UIImage(named: "checkbox-selected.png"), for: UIControlState.normal)
+        }
+    }
+    
+    func didPressBreakUp(sender: UIButton) {
+        let tag = sender.tag
+        let indexPath = IndexPath(item: tag, section: 0)
+        var company: COMPANY_DETAILS;
+        if (selectedCompanyDetails.count > 0) {
+            company = selectedCompanyDetails[indexPath.row] as COMPANY_DETAILS
+        } else {
+            company = companyController.object(at: indexPath)
+        }
+        var totalPremiumBreakUp = company.coverPremium
+        totalPremiumBreakUp = totalPremiumBreakUp! + "Total Premium" + " : " + company.premiumAmount! + "\n"
+        
+        self.coveralertDialog(heading: "Break Up", message: totalPremiumBreakUp!)
+    }
+}
+
+extension InsurerController : CoverDelegate {
+    
+    func didPressCoverCheckBox(sender: UIButton) {
+        let tag = sender.tag
+        let indexPath = IndexPath(item: tag, section: 0)
+        let cell = self.coverTable.cellForRow(at: indexPath) as! CoverTable
+        if (selectedCovers.contains(uniqueCovers[indexPath.row])) {
+            let removableCoverName = uniqueCovers[indexPath.row]
+            cell.checkBox.setBackgroundImage(UIImage(named: "checkbox.png"), for: UIControlState.normal)
+            if let index = selectedCovers.index(of: removableCoverName) {
+                selectedCovers.remove(at: index)
+            }
+            for company in selectedCompanyDetails {
+                var isExist = false
+                self.getCoverNames(productID: company.productID!)
+                let covers = coverController.fetchedObjects
+                for cover in covers! {
+                    let coverName = cover.coverName
+                    if (currentSelection.Policy == "Motor Comprehensive") {
+                        var selectedCoverCopy = selectedCovers
+                        if let index = selectedCoverCopy.index(of: "Comprehensive Cover") {
+                            selectedCoverCopy.remove(at: index)
+                        }
+                        if let index = selectedCoverCopy.index(of: "Third Party Liability") {
+                            selectedCoverCopy.remove(at: index)
+                        }
+                        if (selectedCoverCopy.contains(coverName!)) {
+                            isExist = true
+                            break
+                        }
+                    } else {
+                        if (selectedCovers.contains(coverName!)) {
+                            isExist = true
+                            break
+                        }
+                    }
+                }
+                if (!isExist) {
+                    for cover in covers! {
+                        let coverName = cover.coverName
+                        if (coverName == removableCoverName) {
+                            let index = selectedCompanyDetails.index(of: company)
+                            selectedCompanyDetails.remove(at: index!)
+                            break
+                        }
+                    }
+                    
+                }
+            }
+        } else {
+            selectedCovers.append(uniqueCovers[indexPath.row])
+            cell.checkBox.setBackgroundImage(UIImage(named: "checkbox-selected.png"), for: UIControlState.normal)
+            let company = companyController.fetchedObjects
+            for company in company! {
+                self.getCoverNames(productID: company.productID!)
+                var companyExist = false
+                let covers = coverController.fetchedObjects
+                for cover in covers! {
+                    let coverName = cover.coverName
+                    if (coverName == uniqueCovers[indexPath.row]) {
+                        for selectedCompany in selectedCompanyDetails {
+                            if (selectedCompany.productID == company.productID) {
+                                companyExist = true
+                            }
+                        }
+                        if (!companyExist) {
+                            selectedCompanyDetails.append(company)
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (selectedCompanyDetails.count == 0 && selectedCovers.count > 0 && currentSelection.Policy != "Motor Comprehensive") {
+            self.selectedCompanyDetails.removeAll()
+            self.selectedCompanyProductID.removeAll()
+            self.companyTable.isHidden = true
+        } else {
+            if (selectedCompanyDetails.count > 0) {
+                for selectedCompany in selectedCompanyDetails {
+                    let premiumValue = selectedCompany.premiumAmount
+                    if (selectedCovers.count > 0) {
+                        let coverDictionary: NSMutableDictionary = NSMutableDictionary()
+                        let coverPremiumText = selectedCompany.coverPremium
+                        let coverArray =  coverPremiumText?.components(separatedBy: .newlines)
+                        for cover in coverArray! {
+                            let key = cover.components(separatedBy: " :")
+                            if let range = cover.range(of: ": ") {
+                                let value = cover.substring(from: range.upperBound)
+                                print(value)
+                                coverDictionary.setValue(value, forKey: key[0].uppercased())
+                            }
+                            print(key)
+                        }
+                        
+                        var premiumDouble = Double(premiumValue ?? "") ?? 0.00
+                        for selectedCover in selectedCovers {
+                            let coverID = self.getCoverIdByCoverName(coverName: selectedCover)
+                            if (coverID != "OD" && coverID != "TP") {
+                                let coverAmount = Double(coverDictionary[coverID] as? String ?? "") ?? 0.00
+                                premiumDouble = premiumDouble + coverAmount;
+                            }
+                        }
+                        
+                        self.saveTotalPremium(productID: selectedCompany.productID!, premiumValue: "\(premiumDouble)")
+                    } else {
+                        self.saveTotalPremium(productID: selectedCompany.productID!, premiumValue: premiumValue!)
+                    }
+                }
+                selectedCompanyDetails = selectedCompanyDetails.sorted(by: { (Double($0.totalPremium ?? "") ?? 0.00) < (Double($1.totalPremium ?? "") ?? 0.00) })
+            }
+            self.companyTable.isHidden = false
+            self.selectedCompanyProductID.removeAll()
+            self.companyTable.reloadData()
+        }
     }
 }

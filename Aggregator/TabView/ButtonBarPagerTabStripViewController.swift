@@ -44,7 +44,7 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
             label.font = UIFont.systemFont(ofSize: 10)
             label.text = childItemInfo.title
             //            let labelSize = label.intrinsicContentSize
-            let buttonBarWidth = self?.settings.style.buttonBarWidth ?? 80
+            let buttonBarWidth = self?.settings.style.buttonBarWidth ?? 110
             return buttonBarWidth + (self?.settings.style.buttonBarItemLeftRightMargin ?? 8) * 2
         })
         
@@ -52,7 +52,7 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
             let flowLayout = UICollectionViewFlowLayout()
             flowLayout.scrollDirection = .horizontal
             let buttonBarHeight = settings.style.buttonBarHeight ?? 34
-            let buttonBarWidth = settings.style.buttonBarWidth ?? 50
+            let buttonBarWidth = settings.style.buttonBarWidth ?? 110
             let buttonBar = ButtonBarView(frame: CGRect(x: 0, y: 0, width: buttonBarWidth, height: buttonBarHeight), collectionViewLayout: flowLayout)
             buttonBar.backgroundColor = .orange
             buttonBar.selectedBar.backgroundColor = .black

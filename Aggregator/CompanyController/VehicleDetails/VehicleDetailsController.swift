@@ -12,7 +12,7 @@ import CoreData
 
 class VehicleDetailsController: UIViewController, IndicatorInfoProvider {
     
-    var itemInfo: IndicatorInfo = IndicatorInfo(title: "PersonalDetails")
+    var itemInfo: IndicatorInfo = IndicatorInfo(title: "Vehicle Details")
     let constants = Constants()
     let webserviceManager = WebserviceManager();
     let sharedInstance = CoreDataManager.sharedInstance;
@@ -35,13 +35,14 @@ class VehicleDetailsController: UIViewController, IndicatorInfoProvider {
         model.text = "\("Vehicle Model: ")\(currentSelection.modelName)"
         variant.text = "\("Vehicle Variant: ")\(currentSelection.variantName)"
         place.text = "\("Place of Registration: ")\(currentSelection.rtoName)"
-        date.text = "\("Date of Registration: ")\(currentSelection.date)"
+        date.text = "\("Date of Registration: ")\(currentSelection.vehicleRegDate)"
         price.text = "\("Price: ")\(currentSelection.price)"
         policyType.text = "\("Policy Type: ")\(currentSelection.Policy)"
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        policyType.text = "\("Policy Type: ")\(currentSelection.Policy)"
     }
     
     func indicatorInfo(for pagerTabStripController: PagerTabStripViewController) -> IndicatorInfo {
